@@ -19,18 +19,16 @@ import {
   DeleteOutlined,
   ExclamationCircleFilled,
 } from "@ant-design/icons";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 
 const { confirm } = Modal;
 export default function TeacherListPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [modal, contextHolder] = Modal.useModal();
-  const page = Number(searchParams.get("page")) || 1;
-  const pageSize = Number(searchParams.get("pageSize")) || 10;
-
-  const searchText = searchParams.get("search") || "";
+  const [page , setPage] = useState(1)
+  const [pageSize , setPageSize] = useState(10)
+  const [search , setSearch] = useState("") 
 
 
   const [totalCount, setTotalCount] = useState(100);
@@ -201,13 +199,8 @@ const columns = [
               placeholder="Search Teachers..."
               prefix={<SearchOutlined />}
               allowClear
-              value={searchText}
-              onChange={(e) =>
-                updateQueryParams({
-                  search: e.target.value,
-                  page: 1,
-                })
-              }
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               className="table-search-inputs"
             />
           </Col>
@@ -245,10 +238,7 @@ const columns = [
             showSizeChanger: true,
            showTotal: (total) => `Total ${total} teachers`,
             onChange: (newPage, newPageSize) => {
-              updateQueryParams({
-                page: newPage,
-                pageSize: newPageSize,
-              });
+             setPageSize(newPageSize) ; setPage(newPage)
             },
           }}
           scroll={{x:"max-content"}}

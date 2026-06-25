@@ -23,7 +23,7 @@ import {
   ExclamationCircleFilled,
   UploadOutlined,
 } from "@ant-design/icons";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 import CommonModal from "../../../../components/common/CommonModal";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
@@ -31,15 +31,14 @@ import { saveAs } from "file-saver";
 const { Option } = Select;
 export default function SchoolListPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [modal, contextHolder] = Modal.useModal();
 
-  const page = Number(searchParams.get("page")) || 1;
-  const pageSize = Number(searchParams.get("pageSize")) || 10;
+  const [page , setPage] = useState(1)
+  const [pageSize , setPageSize] = useState(10)
+  const [search , setSearch] = useState("") 
+  const [selectedClass , setSelectedClass ] = useState("") 
+  const [selectedSection , setSelectedSection] = useState("") 
 
-  const searchText = searchParams.get("search") || "";
-  const selectedClass = searchParams.get("class") || undefined;
-  const selectedSection = searchParams.get("section") || undefined;
 
   const [importModal, setImportModal] = useState(false);
   const [fileList, setFileList] = useState([]);
@@ -262,12 +261,9 @@ export default function SchoolListPage() {
               placeholder="Search Student..."
               prefix={<SearchOutlined />}
               allowClear
-              value={searchText}
+              value={search}
               onChange={(e) =>
-                updateQueryParams({
-                  search: e.target.value,
-                  page: 1,
-                })
+               setSearch(e.target.value)
               }
               className="table-search-inputs"
             />
@@ -280,10 +276,7 @@ export default function SchoolListPage() {
               className="w-full"
               value={selectedClass}
               onChange={(value) =>
-                updateQueryParams({
-                  class: value,
-                  page: 1,
-                })
+               setSelectedClass(value)
               }
             >
               <Option value="1">Class 1</Option>
@@ -301,10 +294,7 @@ export default function SchoolListPage() {
               className="w-full"
               value={selectedSection}
               onChange={(value) =>
-                updateQueryParams({
-                  section: value,
-                  page: 1,
-                })
+               setSelectedSection(value)
               }
             >
               <Option value="A">A</Option>
@@ -355,10 +345,7 @@ export default function SchoolListPage() {
             showSizeChanger: true,
             showTotal: (total) => `Total ${total} students`,
             onChange: (newPage, newPageSize) => {
-              updateQueryParams({
-                page: newPage,
-                pageSize: newPageSize,
-              });
+           setPage(newPage); setPageSize(newPageSize)
             },
           }}
         />

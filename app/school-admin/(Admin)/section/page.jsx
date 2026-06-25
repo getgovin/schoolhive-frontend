@@ -19,16 +19,15 @@ import {
   DeleteOutlined,
   ExclamationCircleFilled,
 } from "@ant-design/icons";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 export default function SectionListPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [modal, contextHolder] = Modal.useModal();
 
-  const page = Number(searchParams.get("page")) || 1;
-  const pageSize = Number(searchParams.get("pageSize")) || 10;
-  const searchText = searchParams.get("search") || "";
+  const [page , setPage] = useState(1)
+  const [pageSize , setPageSize] = useState(10)
+  const [search , setSearch] = useState("") 
 
   const [totalCount] = useState(50);
 
@@ -149,23 +148,7 @@ export default function SectionListPage() {
     },
   ];
 
-  const updateQueryParams = (updates) => {
-    const params = new URLSearchParams(searchParams.toString());
 
-    Object.entries(updates).forEach(([key, value]) => {
-      if (
-        value === undefined ||
-        value === null ||
-        value === ""
-      ) {
-        params.delete(key);
-      } else {
-        params.set(key, value);
-      }
-    });
-
-    router.push(`?${params.toString()}`);
-  };
 
   return (
     <>
@@ -187,12 +170,9 @@ export default function SectionListPage() {
               placeholder="Search section..."
               prefix={<SearchOutlined />}
               allowClear
-              value={searchText}
-              onChange={(e) =>
-                updateQueryParams({
-                  search: e.target.value,
-                  page: 1,
-                })
+              value={search}
+              onChange={(e) => setSearch(e.target.value)
+                
               }
               className="table-search-inputs"
             />
@@ -225,10 +205,7 @@ export default function SectionListPage() {
             showTotal: (total) =>
               `Total ${total} Sections`,
             onChange: (newPage, newPageSize) => {
-              updateQueryParams({
-                page: newPage,
-                pageSize: newPageSize,
-              });
+            setPageSize(newPageSize) ; setPage(newPage)
             },
           }}
         />

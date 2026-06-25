@@ -25,7 +25,7 @@ const { confirm } = Modal;
 
 export default function SchoolListPage() {
   const router = useRouter();
-  const [searchText, setSearchText] = useState("");
+  const [search, setsearch] = useState("");
 
   const showDeleteConfirm = (record) => {
     confirm({
@@ -88,8 +88,8 @@ export default function SchoolListPage() {
     (item) =>
       item.schoolName
         .toLowerCase()
-        .includes(searchText.toLowerCase()) ||
-      item.code.toLowerCase().includes(searchText.toLowerCase())
+        .includes(search.toLowerCase()) ||
+      item.code.toLowerCase().includes(search.toLowerCase())
   );
 
   const columns = [
@@ -202,9 +202,9 @@ export default function SchoolListPage() {
           prefix={<SearchOutlined />}
           className="max-w-md table-search-inputs"
           allowClear
-          value={searchText}
+          value={search}
           onChange={(e) =>
-            setSearchText(e.target.value)
+            setsearch(e.target.value)
           }
 
         />

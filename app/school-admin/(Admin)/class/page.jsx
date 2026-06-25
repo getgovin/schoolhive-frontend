@@ -1,5 +1,4 @@
 "use client";
-
 import React, { useState } from "react";
 import {
   Table,
@@ -19,16 +18,17 @@ import {
   DeleteOutlined,
   ExclamationCircleFilled,
 } from "@ant-design/icons";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useRouter } from "next/navigation";
 
 export default function ClassListPage() {
   const router = useRouter();
-  const searchParams = useSearchParams();
   const [modal, contextHolder] = Modal.useModal();
 
-  const page = Number(searchParams.get("page")) || 1;
-  const pageSize = Number(searchParams.get("pageSize")) || 10;
-  const searchText = searchParams.get("search") || "";
+  const [page , setPage] = useState(1)
+  const [pageSize , setPageSize] = useState(10)
+  const [search , setSearch] = useState("") 
+
+
 
   const [totalCount] = useState(20);
 
@@ -152,27 +152,12 @@ export default function ClassListPage() {
     },
   ];
 
-  const updateQueryParams = (updates) => {
-    const params = new URLSearchParams(searchParams.toString());
 
-    Object.entries(updates).forEach(([key, value]) => {
-      if (
-        value === undefined ||
-        value === null ||
-        value === ""
-      ) {
-        params.delete(key);
-      } else {
-        params.set(key, value);
-      }
-    });
-
-    router.push(`?${params.toString()}`);
-  };
 
   return (
     <>
       {contextHolder}
+      
 
       {/* Header */}
       <div className="mb-6">
@@ -192,12 +177,9 @@ export default function ClassListPage() {
               placeholder="Search class..."
               prefix={<SearchOutlined />}
               allowClear
-              value={searchText}
+              value={search}
               onChange={(e) =>
-                updateQueryParams({
-                  search: e.target.value,
-                  page: 1,
-                })
+                setSearch(e.target.value )
               }
               className="table-search-inputs"
             />
@@ -234,10 +216,7 @@ export default function ClassListPage() {
             showTotal: (total) =>
               `Total ${total} Classes`,
             onChange: (newPage, newPageSize) => {
-              updateQueryParams({
-                page: newPage,
-                pageSize: newPageSize,
-              });
+              setPage(newPage) ; setPageSize(newPageSize)
             },
           }}
         />

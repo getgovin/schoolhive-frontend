@@ -52,17 +52,7 @@ const antdTheme = {
       controlHeight: 40,
       borderRadius: 8,
     },
-    // Menu styling
-    Menu: {
-    //   controlItemBgHover: '#f3f0ff',
-      controlItemBgSelectedHorizontal: 'transparent',
-    //   colorPrimaryText: '#7c3aed',
-    // itemColor: '#ffffff', // normal menu item color
-    //         itemHoverColor: '#ffffff',
-    //         itemSelectedColor: '#7c3aed',
-    //         itemBg: 'transparent',
-    //         itemSelectedBg: '#f3e8ff',
-    },
+
   },
 };
 
