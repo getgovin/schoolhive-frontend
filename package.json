@@ -9,9 +9,17 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "@ant-design/icons": "^6.2.5",
+    "@flaticon/flaticon-uicons": "^3.3.1",
+    "antd": "^6.4.3",
+    "antd-img-crop": "^4.30.0",
+    "file-saver": "^2.0.5",
+    "formik": "^2.4.9",
     "next": "16.2.7",
     "react": "19.2.4",
-    "react-dom": "19.2.4"
+    "react-dom": "19.2.4",
+    "xlsx": "^0.18.5",
+    "yup": "^1.7.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
