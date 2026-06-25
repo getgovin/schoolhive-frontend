@@ -157,7 +157,7 @@ export default function Sidebar({ setOpensidebar , opensidebar }) {
       <CloseOutlined className='sidebar-bar' onClick={()=> setOpensidebar(!opensidebar)} />
         {/* Nav */}
         <nav className="flex-1 px-2.5 overflow-y-auto">
-          {navSections.map(({ section, routes }, idx) => (
+          {SchoolnavSections.map(({ section, routes }, idx) => (
             <div key={idx} className="mb-1">
               {section && (
                 <p className="text-[10px] font-medium uppercase tracking-widest text-white/90 px-3 pt-3 pb-1">
