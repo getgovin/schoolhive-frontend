@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Form,
   Select,
@@ -9,34 +10,62 @@ import {
   Row,
   Col,
   message,
+  Spin,
 } from "antd";
 import { useRouter } from "next/navigation";
+import { feeCreate } from "../../../../../api/fee.api";
+import {classList} from "../../../../../api/class.api"
+import { toast } from "react-toastify";
+import { LoadingOutlined } from "@ant-design/icons";
 
 export default function AddFeesPage() {
   const router = useRouter();
   const [form] = Form.useForm();
+  const queryClient = useQueryClient();
 
-  const onFinish = (values) => {
-    console.log(values);
+  // Queries
+  const query = useQuery({
+    queryKey: ["classes"],
+    queryFn: classList,
+  });
+  const classOptions = query?.data?.data?.map((value) => ({
+    value: value?._id,
+    label: value?.className,
+  }));
+  // Mutations
+  const mutation = useMutation({
+    mutationFn: feeCreate,
+    onSuccess: (data) => {
+      if (data?.status) {
+        toast.success(data?.message);
+        queryClient.invalidateQueries({
+          queryKey: ["fees"],
+        });
+        router.back();
+      } else {
+        toast.error(data?.message);
+      }
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message);
+    },
+  });
 
-    message.success("Fees created successfully");
-
-    /*
-    Payload Example
-
-    {
-      classId: values.classId,
-      fees: values.fees
+  const handleSubmit = async (values) => {
+    try {
+      await mutation.mutateAsync(values);
+    } catch (error) {
+      console.error(error);
     }
-    */
   };
+
 
   return (
     <Card title="Add Fees">
       <Form
         form={form}
         layout="vertical"
-        onFinish={onFinish}
+        onFinish={handleSubmit}
       >
         <h3 className="mb-4 font-semibold">
           Fees Information
@@ -56,40 +85,7 @@ export default function AddFeesPage() {
             >
               <Select
                 placeholder="Select Class"
-                options={[
-                  {
-                    label: "Nursery",
-                    value: 1,
-                  },
-                  {
-                    label: "LKG",
-                    value: 2,
-                  },
-                  {
-                    label: "UKG",
-                    value: 3,
-                  },
-                  {
-                    label: "Class 1",
-                    value: 4,
-                  },
-                  {
-                    label: "Class 2",
-                    value: 5,
-                  },
-                  {
-                    label: "Class 3",
-                    value: 6,
-                  },
-                  {
-                    label: "Class 4",
-                    value: 7,
-                  },
-                  {
-                    label: "Class 5",
-                    value: 8,
-                  },
-                ]}
+                options={classOptions}
               />
             </Form.Item>
           </Col>
@@ -97,7 +93,7 @@ export default function AddFeesPage() {
           <Col xs={24} md={12}>
             <Form.Item
               label="Fees Amount"
-              name="fees"
+              name="fee"
               rules={[
                 {
                   required: true,
@@ -141,13 +137,18 @@ export default function AddFeesPage() {
           <Button onClick={() => router.back()}>
             Cancel
           </Button>
-
           <Button
             type="primary"
             htmlType="submit"
+            disabled={mutation.isPending}
           >
-            Create Fees
+            {mutation.isPending ? (
+              <Spin indicator={<LoadingOutlined spin />} size="small" />
+            ) : (
+              <span className="flex items-center"> Create Fees</span>
+            )}
           </Button>
+
         </div>
       </Form>
     </Card>

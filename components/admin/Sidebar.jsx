@@ -75,18 +75,18 @@ const SchoolnavSections = [
         label: 'Students',
         href: '/school-admin/students',
       },
-      {
-        key: '/school-admin/teachers',
-        icon: <TeamOutlined />,
-        label: 'Teachers',
-        href: '/school-admin/teachers',
-      },
-      {
-        key: '/school-admin/otherStaffs',
-        icon: <SafetyCertificateOutlined />,
-        label: 'Other Staff',
-        href: '/school-admin/otherStaffs',
-      },
+      // {
+      //   key: '/school-admin/teachers',
+      //   icon: <TeamOutlined />,
+      //   label: 'Teachers',
+      //   href: '/school-admin/teachers',
+      // },
+      // {
+      //   key: '/school-admin/otherStaffs',
+      //   icon: <SafetyCertificateOutlined />,
+      //   label: 'Other Staff',
+      //   href: '/school-admin/otherStaffs',
+      // },
             {
         key: '/school-admin/fee-submission',
         icon: <SafetyCertificateOutlined />,
@@ -117,25 +117,25 @@ const SchoolnavSections = [
         href: '/school-admin/fees',
       },
    
-      {
-        key: '/admin/reports',
-        icon: <BarChartOutlined />,
-        label: 'Reports',
-        href: '/admin/reports',
-      },
+      // {
+      //   key: '/admin/reports',
+      //   icon: <BarChartOutlined />,
+      //   label: 'Reports',
+      //   href: '/admin/reports',
+      // },
     ],
   },
-  {
-    section: 'System',
-    routes: [
-      {
-        key: '/admin/settings',
-        icon: <SettingOutlined />,
-        label: 'Settings',
-        href: '/admin/settings',
-      },
-    ],
-  },
+  // {
+  //   section: 'System',
+  //   routes: [
+  //     {
+  //       key: '/admin/settings',
+  //       icon: <SettingOutlined />,
+  //       label: 'Settings',
+  //       href: '/admin/settings',
+  //     },
+  //   ],
+  // },
 ];
 
 export default function Sidebar({ setOpensidebar , opensidebar }) {

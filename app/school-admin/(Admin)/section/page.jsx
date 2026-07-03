@@ -1,15 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import {
-  Table,
-  Input,
-  Button,
-  Dropdown,
-  Modal,
-  Row,
-  Col,
-} from "antd";
+import React, { useMemo, useState } from "react";
+import { Table, Input, Button, Dropdown, Modal, Row, Col } from "antd";
 import {
   PlusOutlined,
   SearchOutlined,
@@ -20,76 +12,89 @@ import {
   ExclamationCircleFilled,
 } from "@ant-design/icons";
 import { useRouter } from "next/navigation";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { sectionDelete, sectionList } from "../../../../api/section.api";
+import { debounce } from "lodash";
+import { toast } from "react-toastify";
 
 export default function SectionListPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [modal, contextHolder] = Modal.useModal();
 
-  const [page , setPage] = useState(1)
-  const [pageSize , setPageSize] = useState(10)
-  const [search , setSearch] = useState("") 
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [search, setSearch] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  const [totalCount] = useState(50);
+  const handleSearch = useMemo(
+    () =>
+      debounce((value) => {
+        setDebouncedSearch(value);
+      }, 500),
+    [],
+  );
 
+  // Queries
+  const query = useQuery({
+    queryKey: ["sections", page, pageSize, debouncedSearch],
+    queryFn: () =>
+      sectionList({
+        page,
+        pageSize,
+        search: debouncedSearch,
+      }),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  const { data, error, isPending } = query;
+
+  const mutation = useMutation({
+    mutationFn: sectionDelete,
+    onSuccess: (data) => {
+      if (data?.status) {
+        toast.success(data?.message);
+        // Refetch the list automatically
+        queryClient.invalidateQueries({
+          queryKey: ["sections"],
+        });
+      } else {
+        toast.error(data?.message);
+      }
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message);
+    },
+  });
   const showDeleteConfirm = (record) => {
     modal.confirm({
       title: "Delete Section",
       icon: <ExclamationCircleFilled />,
-      content: `Are you sure you want to delete Section ${record.sectionName}?`,
+      content: `Are you sure you want to delete Section ${record.sectionName} from class ${record.sectionName}?`,
       okText: "Delete",
       okType: "danger",
       cancelText: "Cancel",
       onOk: () => {
-        console.log("Delete Section:", record.key);
+        mutation.mutateAsync(record?._id);
       },
     });
   };
 
-  const dataSource = [
-    {
-      key: 1,
-      className: "Class 1",
-      sectionName: "A",
-    },
-    {
-      key: 2,
-      className: "Class 1",
-      sectionName: "B",
-    },
-    {
-      key: 3,
-      className: "Class 2",
-      sectionName: "A",
-    },
-    {
-      key: 4,
-      className: "Class 2",
-      sectionName: "B",
-    },
-    {
-      key: 5,
-      className: "Class 3",
-      sectionName: "A",
-    },
-  ];
-
   const columns = [
     {
       title: "S.No",
-      render: (_, __, index) =>
-        (page - 1) * pageSize + index + 1,
+      render: (_, __, index) => (page - 1) * pageSize + index + 1,
     },
     {
       title: "Class Name",
-      dataIndex: "className",
+      dataIndex: ["classId", "className"],
       sorter: (a, b) =>
-        a.className.localeCompare(b.className),
+        (a.classId?.className || "").localeCompare(b.classId?.className || ""),
     },
     {
       title: "Section Name",
       dataIndex: "sectionName",
-      sorter: (a, b) =>
-        a.sectionName.localeCompare(b.sectionName),
+      sorter: (a, b) => a.sectionName.localeCompare(b.sectionName),
     },
     {
       title: "Action",
@@ -98,11 +103,11 @@ export default function SectionListPage() {
           trigger={["click"]}
           menu={{
             items: [
-              {
-                key: "view",
-                icon: <EyeOutlined />,
-                label: "View",
-              },
+              // {
+              //   key: "view",
+              //   icon: <EyeOutlined />,
+              //   label: "View",
+              // },
               {
                 key: "edit",
                 icon: <EditOutlined />,
@@ -117,16 +122,14 @@ export default function SectionListPage() {
             ],
             onClick: ({ key }) => {
               switch (key) {
-                case "view":
-                  router.push(
-                    `/school-admin/section/view/${record.key}`
-                  );
-                  break;
+                // case "view":
+                //   router.push(
+                //     `/school-admin/section/view/${record._id}`
+                //   );
+                //   break;
 
                 case "edit":
-                  router.push(
-                    `/school-admin/section/edit/${record.key}`
-                  );
+                  router.push(`/school-admin/section/edit/${record._id}`);
                   break;
 
                 case "delete":
@@ -139,25 +142,18 @@ export default function SectionListPage() {
             },
           }}
         >
-          <Button
-            type="text"
-            icon={<MoreOutlined />}
-          />
+          <Button type="text" icon={<MoreOutlined />} />
         </Dropdown>
       ),
     },
   ];
-
-
 
   return (
     <>
       {contextHolder}
 
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">
-          Section List
-        </h1>
+        <h1 className="text-2xl font-bold text-slate-900">Section List</h1>
         <p className="text-sm text-slate-500 mt-1">
           Manage all class sections.
         </p>
@@ -171,41 +167,40 @@ export default function SectionListPage() {
               prefix={<SearchOutlined />}
               allowClear
               value={search}
-              onChange={(e) => setSearch(e.target.value)
-                
-              }
+              onChange={(e) => {
+                setSearch(e.target.value);
+                handleSearch(e.target.value);
+              }}
               className="table-search-inputs"
             />
           </Col>
         </Row>
-  <div className="flex justify-end  ">
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() =>
-            router.push("/school-admin/section/add")
-          }
-        >
-          Add Section
-        </Button>
-      </div>
+        <div className="flex justify-end  ">
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => router.push("/school-admin/section/add")}
+          >
+            Add Section
+          </Button>
+        </div>
       </div>
 
       <div className="bg-white rounded-xl shadow-sm p-4">
         <Table
           columns={columns}
-          dataSource={dataSource}
-          rowKey="key"
-          scroll={{x:"max-content"}}
+          dataSource={data?.data}
+          rowKey="_id"
+          scroll={{ x: "max-content" }}
           pagination={{
             current: page,
             pageSize,
-            total: totalCount,
+            total: data?.total || 0,
             showSizeChanger: true,
-            showTotal: (total) =>
-              `Total ${total} Sections`,
+            showTotal: (total) => `Total ${total} Sections`,
             onChange: (newPage, newPageSize) => {
-            setPageSize(newPageSize) ; setPage(newPage)
+              setPageSize(newPageSize);
+              setPage(newPage);
             },
           }}
         />

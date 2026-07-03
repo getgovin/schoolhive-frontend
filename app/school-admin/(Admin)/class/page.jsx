@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Table,
   Input,
@@ -19,19 +19,61 @@ import {
   ExclamationCircleFilled,
 } from "@ant-design/icons";
 import { useRouter } from "next/navigation";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { classDelete, classList } from "../../../../api/class.api";
+import { debounce } from "lodash";
+import { toast } from "react-toastify";
 
 export default function ClassListPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
+
   const [modal, contextHolder] = Modal.useModal();
 
   const [page , setPage] = useState(1)
   const [pageSize , setPageSize] = useState(10)
   const [search , setSearch] = useState("") 
+  const [debouncedSearch , setDebouncedSearch] = useState("") 
 
 
+const handleSearch = useMemo(
+  () =>
+    debounce((value) => {
+      setDebouncedSearch(value);
+    }, 500),
+  []
+);
+  // Queries
+const query = useQuery({
+  queryKey: ["classes", page, pageSize, debouncedSearch],
+  queryFn: () =>
+    classList({
+      page,
+      pageSize,
+       search : debouncedSearch,
+    }),
+  staleTime: 1000 * 60 * 5, // 5 minutes
 
-  const [totalCount] = useState(20);
+});
 
+const mutation = useMutation({
+  mutationFn: classDelete,
+  onSuccess: (data) => {
+    if(data?.status){
+    toast.success(data?.message)
+    // Refetch the list automatically
+    queryClient.invalidateQueries({
+      queryKey: ["classes"],
+    });
+    } else {
+          toast.error(data?.message)
+    }
+  },
+  onError: (error) => {
+        toast.error(error.response?.data?.message)
+
+  },
+});
   const showDeleteConfirm = (record) => {
     modal.confirm({
       title: "Delete Class",
@@ -41,45 +83,12 @@ export default function ClassListPage() {
       okType: "danger",
       cancelText: "Cancel",
       onOk: () => {
-        console.log("Delete Class:", record.id);
+        mutation.mutateAsync(record?._id);
       },
     });
   };
 
-  const dataSource = [
-    {
-      key: 1,
-      className: "Nursery",
-    },
-    {
-      key: 2,
-      className: "LKG",
-    },
-    {
-      key: 3,
-      className: "UKG",
-    },
-    {
-      key: 4,
-      className: "Class 1",
-    },
-    {
-      key: 5,
-      className: "Class 2",
-    },
-    {
-      key: 6,
-      className: "Class 3",
-    },
-    {
-      key: 7,
-      className: "Class 4",
-    },
-    {
-      key: 8,
-      className: "Class 5",
-    },
-  ];
+
 
   const columns = [
     {
@@ -102,11 +111,7 @@ export default function ClassListPage() {
           trigger={["click"]}
           menu={{
             items: [
-              // {
-              //   key: "view",
-              //   icon: <EyeOutlined />,
-              //   label: "View",
-              // },
+             
               {
                 key: "edit",
                 icon: <EditOutlined />,
@@ -121,15 +126,11 @@ export default function ClassListPage() {
             ],
             onClick: ({ key }) => {
               switch (key) {
-                // case "view":
-                //   router.push(
-                //     `/school-admin/class/view/${record.key}`
-                //   );
-                //   break;
+              
 
                 case "edit":
                   router.push(
-                    `/school-admin/class/edit/${record.key}`
+                    `/school-admin/class/edit/${record._id}`
                   );
                   break;
 
@@ -179,8 +180,7 @@ export default function ClassListPage() {
               allowClear
               value={search}
               onChange={(e) =>
-                setSearch(e.target.value )
-              }
+                {setSearch(e.target.value ) ; handleSearch(e.target.value) }              }
               className="table-search-inputs"
             />
           </Col>
@@ -205,13 +205,13 @@ export default function ClassListPage() {
       <div className="bg-white rounded-xl shadow-sm p-4">
         <Table
           columns={columns}
-          dataSource={dataSource}
-          rowKey="key"
+          dataSource={query?.data?.data || []}
+          rowKey="_id"
           scroll={{x:"max-content"}}
           pagination={{
             current: page,
             pageSize,
-            total: totalCount,
+            total: query?.data?.total || 0,
             showSizeChanger: true,
             showTotal: (total) =>
               `Total ${total} Classes`,

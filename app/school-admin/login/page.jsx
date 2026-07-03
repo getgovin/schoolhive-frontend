@@ -2,13 +2,39 @@
 import React, { useState } from "react";
 import { Formik, Form, Field, ErrorMessage } from "formik";
 import * as Yup from "yup";
-import { Button, Card } from "antd";
+import { Button, Card, Spin } from "antd";
 import { useRouter } from "next/navigation";
-
+import { useMutation } from "@tanstack/react-query";
+import { schoolLogin } from "../../../api/school.auth";
+import { LoadingOutlined } from "@ant-design/icons";
+import { toast } from "react-toastify";
+import { useAuth } from "../../../store/auth.store";
+import Cookies from "js-cookie";
 const SuperAdminLogin = () => {
   const router  = useRouter();
+ const {login}  = useAuth();
   const [showPassword, setShowPassword] = useState(false);
 
+  // Mutations
+const mutation = useMutation({
+  mutationFn: schoolLogin,
+  onSuccess: (data) => {
+    if(data?.status){
+    toast.success(data?.message)
+    login({ token:data?.token , schoolId:data?.user?._id , userType :"SCHOOL_ADMIN" })
+    // Save in cookie (for middleware)
+    Cookies.set("token", data?.token );
+    router.push("/school-admin/dashboard");
+
+    } else {
+          toast.error(data?.message)
+    }
+  },
+  onError: (error) => {
+        toast.error(error.response?.data?.message)
+
+  },
+});
   const initialValues = { email: "", password: "" };
 
   const validationSchema = Yup.object({
@@ -20,17 +46,15 @@ const SuperAdminLogin = () => {
       .required("Password is required"),
   });
 
-  const handleSubmit = async (values, { setSubmitting }) => {
-    try {
-      console.log("Login Data:", values);
-      // API Call Here
-      router.push('/school-admin/dashboard')
-    } catch (error) {
-      console.error(error);
-    } finally {
-      setSubmitting(false);
-    }
-  };
+const handleSubmit = async (values, { setSubmitting }) => {
+  try {
+    await mutation.mutateAsync(values);
+  } catch (error) {
+    console.error(error);
+  } finally {
+    setSubmitting(false);
+  }
+};
 
   return (
     <div className="min-h-screen bg-slate-50 flex items-center justify-center relative overflow-hidden">
@@ -121,12 +145,16 @@ const SuperAdminLogin = () => {
   disabled={isSubmitting}
   type="primary"
   block
-    htmlType="submit"
+  htmlType="submit"
 
-
+  disabled={mutation.isPending}
 >
-  Sign In
-  <i className="fi fi-tr-arrow-small-right text-2xl text-white ml-2"></i>
+  { mutation.isPending ? 
+        <Spin indicator={<LoadingOutlined spin />} size="small" /> : <span className="flex items-center">  Sign In
+  <i className="fi fi-tr-arrow-small-right text-2xl text-white ml-2"></i> </span>
+
+  }
+
 </Button>
               </Form>
             )}

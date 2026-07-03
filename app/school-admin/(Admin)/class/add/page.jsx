@@ -1,55 +1,67 @@
 "use client";
 
-import {
-  Form,
-  Select,
-  Button,
-  Card,
-  Row,
-  Col,
-  message,
-} from "antd";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Form, Select, Button, Card, Row, Col, message, Spin } from "antd";
 import { useRouter } from "next/navigation";
+import { classCreate } from "../../../../../api/class.api";
+import { toast } from "react-toastify";
+import { LoadingOutlined } from "@ant-design/icons";
 
 const classOptions = [
   { label: "Pre-Nursery", value: "PRE_NURSERY" },
   { label: "Nursery", value: "NURSERY" },
   { label: "LKG", value: "LKG" },
   { label: "UKG", value: "UKG" },
-  { label: "Class 1", value: "1" },
-  { label: "Class 2", value: "2" },
-  { label: "Class 3", value: "3" },
-  { label: "Class 4", value: "4" },
-  { label: "Class 5", value: "5" },
-  { label: "Class 6", value: "6" },
-  { label: "Class 7", value: "7" },
-  { label: "Class 8", value: "8" },
-  { label: "Class 9", value: "9" },
-  { label: "Class 10", value: "10" },
-  { label: "Class 11", value: "11" },
-  { label: "Class 12", value: "12" },
+  { label: "1", value: "1" },
+  { label: "2", value: "2" },
+  { label: "3", value: "3" },
+  { label: "4", value: "4" },
+  { label: "5", value: "5" },
+  { label: "6", value: "6" },
+  { label: "7", value: "7" },
+  { label: "8", value: "8" },
+  { label: "9", value: "9" },
+  { label: "10", value: "10" },
+  { label: "11", value: "11" },
+  { label: "12", value: "12" },
 ];
 
 export default function AddClassPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [form] = Form.useForm();
 
-  const onFinish = (values) => {
-    console.log(values);
+  // Mutations
+  const mutation = useMutation({
+    mutationFn: classCreate,
+    onSuccess: (data) => {
+      if (data?.status) {
+        toast.success(data?.message);
+        queryClient.invalidateQueries({
+          queryKey: ["classes"],
+        });
+        router.back();
+      } else {
+        toast.error(data?.message);
+      }
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message);
+    },
+  });
 
-    message.success("Class created successfully");
+  const handleSubmit = async (values) => {
+    try {
+      await mutation.mutateAsync(values);
+    } catch (error) {
+      console.error(error);
+    }
   };
 
   return (
     <Card title="Add Class">
-      <Form
-        form={form}
-        layout="vertical"
-        onFinish={onFinish}
-      >
-        <h3 className="mb-4 font-semibold">
-          Class Information
-        </h3>
+      <Form form={form} layout="vertical" onFinish={handleSubmit}>
+        <h3 className="mb-4 font-semibold">Class Information</h3>
 
         <Row gutter={16}>
           <Col xs={24} md={12}>
@@ -74,15 +86,21 @@ export default function AddClassPage() {
         </Row>
 
         <div className="flex justify-end gap-3 mt-8">
-          <Button onClick={() => router.back()}>
-            Cancel
-          </Button>
+          <Button onClick={() => router.back()}>Cancel</Button>
 
           <Button
             type="primary"
             htmlType="submit"
+            disabled={mutation.isPending}
           >
-            Create Class
+            {mutation.isPending ? (
+              <Spin indicator={<LoadingOutlined spin />} size="small" />
+            ) : (
+              <span className="flex items-center">
+                {" "}
+                Create Class
+              </span>
+            )}
           </Button>
         </div>
       </Form>

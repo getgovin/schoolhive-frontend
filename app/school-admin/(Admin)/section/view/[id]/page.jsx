@@ -62,17 +62,7 @@ export default function SectionDetailsPage() {
               </Text>
             </div>
 
-            <Tag
-              color="success"
-              icon={<CheckCircleFilled />}
-              style={{
-                marginTop: 12,
-                borderRadius: 20,
-                paddingInline: 12,
-              }}
-            >
-              {sectionDetails.status}
-            </Tag>
+         
           </div>
 
           {/* Right Side */}
@@ -111,40 +101,11 @@ export default function SectionDetailsPage() {
             </span>
           </Col>
 
-          <Col xs={24} md={12}>
-            <label>Status</label>
-            <span className="view-value">
-              {sectionDetails.status}
-            </span>
-          </Col>
-
-          <Col xs={24} md={12}>
-            <label>Section ID</label>
-            <span className="view-value">
-              {sectionDetails.id}
-            </span>
-          </Col>
+       
         </Row>
       </Card>
 
-      {/* AUDIT INFO */}
-      <Card title="AUDIT INFORMATION">
-        <Row gutter={[48, 32]}>
-          <Col xs={24} md={12}>
-            <label>Created Date</label>
-            <span className="view-value">
-              {sectionDetails.createdAt}
-            </span>
-          </Col>
 
-          <Col xs={24} md={12}>
-            <label>Last Updated Date</label>
-            <span className="view-value">
-              {sectionDetails.updatedAt}
-            </span>
-          </Col>
-        </Row>
-      </Card>
 
       {/* BACK BUTTON */}
       <div

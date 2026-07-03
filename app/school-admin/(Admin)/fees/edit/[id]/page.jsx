@@ -1,5 +1,6 @@
 "use client";
 
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
   Form,
   Select,
@@ -10,33 +11,86 @@ import {
   Col,
   message,
 } from "antd";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useEffect } from "react";
+import { toast } from "react-toastify";
+import { feeUpdate, feeView } from "../../../../../../api/fee.api";
+import { classList } from "../../../../../../api/class.api";
 
 export default function EditFeesPage() {
-  const router = useRouter();
+ const router = useRouter();
+  const params = useParams();
+  const queryClient = useQueryClient();
+
   const [form] = Form.useForm();
 
-  const onFinish = (values) => {
-    console.log(values);
+  // Get Classes
+  const {
+    data: classData,
+    isLoading: classLoading,
+  } = useQuery({
+    queryKey: ["classes"],
+    queryFn: classList,
+  });
 
-    message.success("Fees created successfully");
+  const classOptions =
+    classData?.data?.map((item) => ({
+      value: item._id,
+      label: item.className,
+    })) || [];
 
-    /*
-    Payload Example
+  // Get Section Details
+  const {
+    data: feeData,
+    isLoading,
+  } = useQuery({
+    queryKey: ["fee", params.id],
+    queryFn: () => feeView(params.id),
+    enabled: !!params.id,
+  });
 
-    {
-      classId: values.classId,
-      fees: values.fees
+  useEffect(() => {
+    if (feeData?.data) {
+      form.setFieldsValue({
+        classId: feeData.data.classId?._id,
+        fee: Number(feeData.data.fee),
+      });
     }
-    */
-  };
+  }, [feeData, form]);
 
+  // Update Mutation
+  const mutation = useMutation({
+    mutationFn: feeUpdate,
+    onSuccess: (data) => {
+      if (data?.status) {
+        toast.success(data.message);
+
+        queryClient.invalidateQueries({
+          queryKey: ["fees"],
+        });
+
+        router.back();
+      } else {
+        toast.error(data.message);
+      }
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message || "Something went wrong");
+    },
+  });
+
+  const handleSubmit = (values) => {
+    mutation.mutate({
+      id: params.id,
+      data: values,
+    });
+  };
   return (
     <Card title="Edit Fees">
       <Form
         form={form}
         layout="vertical"
-        onFinish={onFinish}
+        onFinish={handleSubmit}
       >
         <h3 className="mb-4 font-semibold">
           Fees Information
@@ -56,40 +110,7 @@ export default function EditFeesPage() {
             >
               <Select
                 placeholder="Select Class"
-                options={[
-                  {
-                    label: "Nursery",
-                    value: 1,
-                  },
-                  {
-                    label: "LKG",
-                    value: 2,
-                  },
-                  {
-                    label: "UKG",
-                    value: 3,
-                  },
-                  {
-                    label: "Class 1",
-                    value: 4,
-                  },
-                  {
-                    label: "Class 2",
-                    value: 5,
-                  },
-                  {
-                    label: "Class 3",
-                    value: 6,
-                  },
-                  {
-                    label: "Class 4",
-                    value: 7,
-                  },
-                  {
-                    label: "Class 5",
-                    value: 8,
-                  },
-                ]}
+                options={classOptions}
               />
             </Form.Item>
           </Col>
@@ -97,7 +118,7 @@ export default function EditFeesPage() {
           <Col xs={24} md={12}>
             <Form.Item
               label="Fees Amount"
-              name="fees"
+              name="fee"
               rules={[
                 {
                   required: true,

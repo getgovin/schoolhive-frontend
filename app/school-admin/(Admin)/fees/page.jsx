@@ -1,15 +1,7 @@
 "use client";
 
-import React, { useState } from "react";
-import {
-  Table,
-  Input,
-  Button,
-  Dropdown,
-  Modal,
-  Row,
-  Col,
-} from "antd";
+import React, { useMemo, useState } from "react";
+import { Table, Input, Button, Dropdown, Modal, Row, Col } from "antd";
 import {
   PlusOutlined,
   SearchOutlined,
@@ -20,17 +12,61 @@ import {
   ExclamationCircleFilled,
 } from "@ant-design/icons";
 import { useRouter } from "next/navigation";
+import { debounce } from "lodash";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { feeDelete, feeList } from "../../../../api/fee.api";
+import { toast } from "react-toastify";
 
 export default function FeesListPage() {
   const router = useRouter();
   const [modal, contextHolder] = Modal.useModal();
+  const queryClient = useQueryClient();
 
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(10);
+  const [search, setSearch] = useState("");
 
-  const [page , setPage] = useState(1)
-  const [pageSize , setPageSize] = useState(10)
-  const [search , setSearch] = useState("") 
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
-  const [totalCount] = useState(50);
+  const handleSearch = useMemo(
+    () =>
+      debounce((value) => {
+        setDebouncedSearch(value);
+      }, 500),
+    [],
+  );
+
+  // Queries
+  const query = useQuery({
+    queryKey: ["fees", page, pageSize, debouncedSearch],
+    queryFn: () =>
+      feeList({
+        page,
+        pageSize,
+        search: debouncedSearch,
+      }),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
+
+  const { data, error, isPending } = query;
+
+  const mutation = useMutation({
+    mutationFn: feeDelete,
+    onSuccess: (data) => {
+      if (data?.status) {
+        toast.success(data?.message);
+        // Refetch the list automatically
+        queryClient.invalidateQueries({
+          queryKey: ["fees"],
+        });
+      } else {
+        toast.error(data?.message);
+      }
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message);
+    },
+  });
 
   const showDeleteConfirm = (record) => {
     modal.confirm({
@@ -41,61 +77,31 @@ export default function FeesListPage() {
       okType: "danger",
       cancelText: "Cancel",
       onOk: () => {
-        console.log("Delete Fees:", record.key);
+               mutation.mutateAsync(record?._id);
+
+
+   
       },
     });
   };
 
-  const dataSource = [
-    {
-      key: 1,
-      className: "Nursery",
-      fees: 10000,
-    },
-    {
-      key: 2,
-      className: "LKG",
-      fees: 12000,
-    },
-    {
-      key: 3,
-      className: "UKG",
-      fees: 12000,
-    },
-    {
-      key: 4,
-      className: "Class 1",
-      fees: 15000,
-    },
-    {
-      key: 5,
-      className: "Class 2",
-      fees: 18000,
-    },
-    {
-      key: 6,
-      className: "Class 3",
-      fees: 20000,
-    },
-  ];
-
   const columns = [
     {
       title: "S.No",
-      render: (_, __, index) =>
-        (page - 1) * pageSize + index + 1,
+      render: (_, __, index) => (page - 1) * pageSize + index + 1,
     },
     {
       title: "Class Name",
-      dataIndex: "className",
+      dataIndex: ["classId", "className"],
       sorter: (a, b) =>
-        a.className.localeCompare(b.className),
+        (a.classId?.className || "").localeCompare(b.classId?.className || ""),
+      render: (className) => `${className}`,
     },
     {
       title: "Fees Amount",
-      dataIndex: "fees",
-      sorter: (a, b) => a.fees - b.fees,
-      render: (fees) => `₹${fees.toLocaleString()}`,
+      dataIndex: "fee",
+      sorter: (a, b) => a.fee - b.fee,
+      render: (fee) => `₹${fee?.toLocaleString()}`,
     },
     {
       title: "Action",
@@ -104,11 +110,11 @@ export default function FeesListPage() {
           trigger={["click"]}
           menu={{
             items: [
-              {
-                key: "view",
-                icon: <EyeOutlined />,
-                label: "View",
-              },
+              // {
+              //   key: "view",
+              //   icon: <EyeOutlined />,
+              //   label: "View",
+              // },
               {
                 key: "edit",
                 icon: <EditOutlined />,
@@ -123,16 +129,12 @@ export default function FeesListPage() {
             ],
             onClick: ({ key }) => {
               switch (key) {
-                case "view":
-                  router.push(
-                    `/school-admin/fees/view/${record.key}`
-                  );
-                  break;
+                // case "view":
+                //   router.push(`/school-admin/fees/view/${record.key}`);
+                //   break;
 
                 case "edit":
-                  router.push(
-                    `/school-admin/fees/edit/${record.key}`
-                  );
+                  router.push(`/school-admin/fees/edit/${record._id}`);
                   break;
 
                 case "delete":
@@ -145,16 +147,11 @@ export default function FeesListPage() {
             },
           }}
         >
-          <Button
-            type="text"
-            icon={<MoreOutlined />}
-          />
+          <Button type="text" icon={<MoreOutlined />} />
         </Dropdown>
       ),
     },
   ];
-
-
 
   return (
     <>
@@ -162,9 +159,7 @@ export default function FeesListPage() {
 
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">
-          Fees List
-        </h1>
+        <h1 className="text-2xl font-bold text-slate-900">Fees List</h1>
         <p className="text-sm text-slate-500 mt-1">
           Manage class-wise fee structure.
         </p>
@@ -179,45 +174,41 @@ export default function FeesListPage() {
               prefix={<SearchOutlined />}
               allowClear
               value={search}
-               onChange={(e) =>
-                setSearch(e.target.value )
-              }
-              
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setDebouncedSearch(e.target.value);
+              }}
               className="table-search-inputs"
             />
           </Col>
         </Row>
         <div className="flex justify-end  ">
-
-        <Button
-          type="primary"
-          icon={<PlusOutlined />}
-          onClick={() =>
-            router.push("/school-admin/fees/add")
-          }
-        >
-          Add Fees
-        </Button>
+          <Button
+            type="primary"
+            icon={<PlusOutlined />}
+            onClick={() => router.push("/school-admin/fees/add")}
+          >
+            Add Fees
+          </Button>
+        </div>
       </div>
-      </div>
-
 
       {/* Table */}
       <div className="bg-white rounded-xl shadow-sm p-4">
         <Table
           columns={columns}
-          dataSource={dataSource}
-          rowKey="key"
-          scroll={{x:"max-content"}}
+          dataSource={data?.data || []}
+          rowKey="_id"
+          scroll={{ x: "max-content" }}
           pagination={{
             current: page,
             pageSize,
-            total: totalCount,
+            total: data?.total || 0,
             showSizeChanger: true,
-            showTotal: (total) =>
-              `Total ${total} Fee Records`,
+            showTotal: (total) => `Total ${total} Fee Records`,
             onChange: (newPage, newPageSize) => {
-             setPage(newPage) ; setPageSize(newPageSize)
+              setPage(newPage);
+              setPageSize(newPageSize);
             },
           }}
         />
