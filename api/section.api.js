@@ -9,6 +9,10 @@ export const sectionList = async (params) => {
   const response = await axiosInstance.get("/school/section/list", {params});
   return response.data;
 };
+export const sectionFilterList = async (params) => {
+  const response = await axiosInstance.get("/school/section/filter/list", {params});
+  return response.data;
+};
 
 export const sectionDelete = async (id) => {
   const response = await axiosInstance.delete(`/school/section/delete/${id}`);

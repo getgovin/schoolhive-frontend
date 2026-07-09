@@ -20,6 +20,11 @@ import {
 } from "@ant-design/icons";
 import ImgCrop from "antd-img-crop";
 import { useRouter } from "next/navigation";
+import { studentCreate } from "../../../../../api/student.api";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {classList} from "../../../../../api/class.api"
+import { sectionFilterList } from "../../../../../api/section.api";
+import { toast } from "react-toastify";
 
 const { Dragger } = Upload;
 const { TextArea } = Input;
@@ -27,29 +32,124 @@ const { TextArea } = Input;
 export default function AddStudentPage() {
   const router = useRouter();
   const [form] = Form.useForm();
+  const queryClient = useQueryClient();
   const [fileList, setFileList] = useState([]);
+  const [classId, setClassId] = useState(null);
+  console.log(classId , "classIdclassId")
 
-  const onFinish = async (values) => {
-    try {
-      const payload = {
-        ...values,
-        dateOfBirth: values.dateOfBirth?.format("YYYY-MM-DD"),
-        dateOfJoining: values.dateOfJoining?.format("YYYY-MM-DD"),
-        photo: fileList?.[0]?.originFileObj || null,
-      };
+    // Queries
+  const query = useQuery({
+    queryKey: ["classes"],
+    queryFn: classList,
+  });
+  const classOptions = query?.data?.data?.map((value) => ({
+    value: value?._id,
+    label: value?.className,
+  }));
 
-      console.log("Student Payload", payload);
+  const { data: sectionData } = useQuery({
+  queryKey: ["sections", classId],
+  queryFn: () => sectionFilterList({ classId }),
+  enabled: !!classId, // Only run when classId exists
+});
+  const SectionOptions = sectionData?.data?.map((value) => ({
+    value: value?._id,
+    label: value?.sectionName,
+  })); 
+  // Mutations
+  const mutation = useMutation({
+    mutationFn: studentCreate,
+    onSuccess: (data) => {
+      if (data?.status) {
+        toast.success(data?.message);
+        queryClient.invalidateQueries({
+          queryKey: ["fees"],
+        });
+        router.back();
+      } else {
+        toast.error(data?.message);
+      }
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message);
+    },
+  });
 
-      // API CALL HERE
-      // await studentService.createStudent(payload);
+const handleSubmit = async (values) => {
+  const payload = {
+    photo: values.photo || "",
 
-      message.success("Student created successfully");
-      router.push("/super-admin/students");
-    } catch (error) {
-      console.error(error);
-      message.error("Something went wrong");
-    }
+    studentInfo: {
+      firstName: values.firstName,
+      middleName: values.middleName || "",
+      lastName: values.lastName,
+      gender: values.gender,
+      dob: values.dateOfBirth,
+      blood_group: values.bloodGroup,
+      adminssion_number: values.admissionNumber,
+      roll_number: values.rollNumber,
+      joining_date: values.dateOfJoining,
+      classId: values.class,
+      sectionId: values.section,
+      oldFee: values.oldFee || "0",
+    },
+
+    parentsDetails: {
+      father_name: values.fatherName,
+      father_number: values.fatherMobile,
+      father_whatsaappNumbr: values.fatherWhatsapp,
+      mother_name: values.motherName,
+      mother_number: values.motherMobile,
+    },
+
+    addressInfo: {
+      village: values.village,
+      tehssil: values.tehsil,
+      distric: values.district,
+      state: values.state,
+      pincode: values.pincode,
+      address: values.address || "",
+    },
+
+    emergency_info: {
+      contact_person: values.emergencyContactPerson,
+      relationshp: values.relationship,
+      mobile_number: values.emergencyMobile,
+    },
   };
+
+  console.log(payload);
+
+  try {
+    await mutation.mutateAsync(payload);
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+
+
+  // const onFinish = async (values) => {
+  //   try {
+  //     const payload = {
+  //       ...values,
+  //       dateOfBirth: values.dateOfBirth?.format("YYYY-MM-DD"),
+  //       dateOfJoining: values.dateOfJoining?.format("YYYY-MM-DD"),
+  //       photo: fileList?.[0]?.originFileObj || null,
+  //     };
+
+  //     console.log("Student Payload", payload);
+
+  //     // API CALL HERE
+  //     // await studentService.createStudent(payload);
+
+  //     message.success("Student created successfully");
+  //     router.push("/super-admin/students");
+  //   } catch (error) {
+  //     console.error(error);
+  //     message.error("Something went wrong");
+  //   }
+  // };
 
   return (
     <Card
@@ -59,7 +159,7 @@ export default function AddStudentPage() {
       <Form
         layout="vertical"
         form={form}
-        onFinish={onFinish}
+        onFinish={handleSubmit}
       >
         {/* PHOTO */}
         <Row gutter={16}>
@@ -278,7 +378,7 @@ export default function AddStudentPage() {
         </Row>
 
         <Row gutter={16}>
-          <Col xs={24} md={6}>
+          <Col xs={24} md={8}>
             <Form.Item
               label="Class"
               name="class"
@@ -288,11 +388,11 @@ export default function AddStudentPage() {
                 },
               ]}
             >
-              <Select placeholder="Select Class" />
+              <Select placeholder="Select Class" options={classOptions} onChange={(e) => setClassId(e)} />
             </Form.Item>
           </Col>
 
-          <Col xs={24} md={6}>
+          <Col xs={24} md={8}>
             <Form.Item
               label="Section"
               name="section"
@@ -302,16 +402,16 @@ export default function AddStudentPage() {
                 },
               ]}
             >
-              <Select placeholder="Select Section" />
+              <Select placeholder="Select Section" options={SectionOptions} />
             </Form.Item>
           </Col>
 
-          <Col xs={24} md={12}>
+          <Col xs={24} md={8}>
             <Form.Item
-              label="Previous School"
-              name="previousSchool"
+              label="Old Fee"
+              name="oldFee"
             >
-              <Input placeholder="Previous School Name" />
+              <Input placeholder="Enter old fee" />
             </Form.Item>
           </Col>
         </Row>
@@ -323,7 +423,7 @@ export default function AddStudentPage() {
         </h5>
 
         <Row gutter={16}>
-          <Col xs={24} md={6}>
+          <Col xs={24} md={8}>
             <Form.Item
               label="Father Name"
               name="fatherName"
@@ -337,7 +437,7 @@ export default function AddStudentPage() {
             </Form.Item>
           </Col>
 
-          <Col xs={24} md={6}>
+          <Col xs={24} md={8}>
             <Form.Item
               label="Father Mobile"
               name="fatherMobile"
@@ -354,7 +454,7 @@ export default function AddStudentPage() {
             </Form.Item>
           </Col>
 
-          <Col xs={24} md={6}>
+          <Col xs={24} md={8}>
             <Form.Item
               label="Father WhatsApp"
               name="fatherWhatsapp"
@@ -363,18 +463,11 @@ export default function AddStudentPage() {
             </Form.Item>
           </Col>
 
-          <Col xs={24} md={6}>
-            <Form.Item
-              label="Father Occupation"
-              name="fatherOccupation"
-            >
-              <Input placeholder="Occupation" />
-            </Form.Item>
-          </Col>
+         
         </Row>
 
         <Row gutter={16}>
-          <Col xs={24} md={8}>
+          <Col xs={24} md={12}>
             <Form.Item
               label="Mother Name"
               name="motherName"
@@ -388,7 +481,7 @@ export default function AddStudentPage() {
             </Form.Item>
           </Col>
 
-          <Col xs={24} md={8}>
+          <Col xs={24} md={12}>
             <Form.Item
               label="Mother Mobile"
               name="motherMobile"
@@ -397,14 +490,7 @@ export default function AddStudentPage() {
             </Form.Item>
           </Col>
 
-          <Col xs={24} md={8}>
-            <Form.Item
-              label="Mother Occupation"
-              name="motherOccupation"
-            >
-              <Input placeholder="Occupation" />
-            </Form.Item>
-          </Col>
+        
         </Row>
 
         {/* ADDRESS */}

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useMemo, useState } from "react";
 import {
   Table,
   Input,
@@ -27,10 +27,15 @@ import { useRouter } from "next/navigation";
 import CommonModal from "../../../../components/common/CommonModal";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { studentDelete, studentList } from "../../../../api/student.api";
+import { debounce } from "lodash";
+import { toast } from "react-toastify";
 
 const { Option } = Select;
 export default function SchoolListPage() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [modal, contextHolder] = Modal.useModal();
 
   const [page , setPage] = useState(1)
@@ -43,18 +48,46 @@ export default function SchoolListPage() {
   const [importModal, setImportModal] = useState(false);
   const [fileList, setFileList] = useState([]);
   const [totalCount, setTotalCount] = useState(100);
+  const [debouncedSearch, setDebouncedSearch] = useState("");
 
+  const handleSearch = useMemo(
+    () =>
+      debounce((value) => {
+        setDebouncedSearch(value);
+      }, 500),
+    [],
+  );
+
+
+  const mutation = useMutation({
+    mutationFn: studentDelete,
+    onSuccess: (data) => {
+      if (data?.status) {
+        toast.success(data?.message);
+        // Refetch the list automatically
+        queryClient.invalidateQueries({
+          queryKey: ["students"],
+        });
+      } else {
+        toast.error(data?.message);
+      }
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message);
+    },
+  });
 
   const showDeleteConfirm = (record) => {
     modal.confirm({
       title: "Delete Student",
       icon: <ExclamationCircleFilled />,
-      content: `Are you sure you want to delete ${record.name}?`,
+      content: `Are you sure you want to delete ${record.studentInfo?.firstName || ""} ${record.studentInfo?.lastName || ""}?`,
       okText: "Delete",
       okType: "danger",
       cancelText: "Cancel",
       onOk() {
-        console.log("Delete:", record);
+        mutation.mutateAsync(record?._id);
+
       },
     });
   };
@@ -107,126 +140,104 @@ export default function SchoolListPage() {
 
     saveAs(file, "Student_Template.xlsx");
   };
-  const dataSource = [
-    {
-      key: 1,
-      name: "Rahul Sharma",
-      fatherName: "Rajesh Sharma",
-      motherName: "Sunita Sharma",
-      class: "10",
-      section: "A",
-    },
-    {
-      key: 2,
-      name: "Priya Verma",
-      fatherName: "Amit Verma",
-      motherName: "Pooja Verma",
-      class: "9",
-      section: "B",
-    },
-    {
-      key: 3,
-      name: "Arjun Singh",
-      fatherName: "Vijay Singh",
-      motherName: "Neha Singh",
-      class: "12",
-      section: "C",
-    },
-    {
-      key: 4,
-      name: "Ananya Gupta",
-      fatherName: "Sanjay Gupta",
-      motherName: "Kavita Gupta",
-      class: "11",
-      section: "A",
-    },
-    {
-      key: 5,
-      name: "Rohan Patel",
-      fatherName: "Mahesh Patel",
-      motherName: "Rekha Patel",
-      class: "8",
-      section: "D",
-    },
-  ];
 
-  const columns = [
-    {
-      title: "Name",
-      dataIndex: "name",
-      sorter: (a, b) => a.name.localeCompare(b.name),
-    },
-    {
-      title: "Father Name",
-      dataIndex: "fatherName",
-      sorter: (a, b) => a.fatherName.localeCompare(b.fatherName),
-    },
-    {
-      title: "Mother Name",
-      dataIndex: "motherName",
-      sorter: (a, b) => a.motherName.localeCompare(b.motherName),
-    },
-    {
-      title: "Class",
-      dataIndex: "class",
-      sorter: (a, b) => Number(a.class) - Number(b.class),
-    },
-    {
-      title: "Section",
-      dataIndex: "section",
-      sorter: (a, b) => a.section.localeCompare(b.section),
-    },
-    {
-      title: "Action",
-      key: "action",
-      width: 80,
-      render: (_, record) => {
-        const items = [
-          {
-            key: "view",
-            icon: <EyeOutlined />,
-            label: "View",
-          },
-          {
-            key: "edit",
-            icon: <EditOutlined />,
-            label: "Edit",
-            
-          },
-          {
-            key: "delete",
-            icon: <DeleteOutlined />,
-            label: "Delete",
-            danger: true,
-          },
-        ];
 
-        return (
-          <Dropdown
-            trigger={["click"]}
-            menu={{
-              items,
-              onClick: ({ key }) => {
-                if (key === "view") {
-                  router.push(`/school-admin/students/view/${record.key}`);
-                }
+  // Queries
+  const query = useQuery({
+    queryKey: ["students", page, pageSize, debouncedSearch],
+    queryFn: () =>
+      studentList({
+        page,
+        pageSize,
+        search: debouncedSearch,
+      }),
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
-                if (key === "edit") {
-                  router.push(`/school-admin/students/edit/${record.key}`);
-                }
+  const { data, error, isPending } = query;
 
-                if (key === "delete") {
-                  showDeleteConfirm(record);
-                }
-              },
-            }}
-          >
-            <Button type="text" icon={<MoreOutlined />} />
-          </Dropdown>
-        );
+
+const columns = [
+  {
+    title: "Name",
+    key: "name",
+    render: (_, record) =>
+      `${record.studentInfo?.firstName || ""} ${record.studentInfo?.lastName || ""}`,
+    sorter: (a, b) =>
+      a.studentInfo.firstName.localeCompare(b.studentInfo.firstName),
+  },
+  {
+    title: "Father Name",
+    key: "fatherName",
+    render: (_, record) => record.parentsDetails?.father_name,
+    sorter: (a, b) =>
+      a.parentsDetails.father_name.localeCompare(b.parentsDetails.father_name),
+  },
+  {
+    title: "Mother Name",
+    key: "motherName",
+    render: (_, record) => record.parentsDetails?.mother_name,
+  },
+  {
+    title: "Class",
+    key: "class",
+    render: (_, record) => record.studentInfo?.classId?.className,
+  },
+  {
+    title: "Section",
+    key: "section",
+    render: (_, record) => record.studentInfo?.sectionId?.sectionName,
+  },
+  {
+  title: "Action",
+  key: "action",
+  width: 80,
+  render: (_, record) => {
+    const items = [
+      {
+        key: "view",
+        icon: <EyeOutlined />,
+        label: "View",
       },
-    },
-  ];
+      {
+        key: "edit",
+        icon: <EditOutlined />,
+        label: "Edit",
+      },
+      {
+        key: "delete",
+        icon: <DeleteOutlined />,
+        label: "Delete",
+        danger: true,
+      },
+    ];
+
+    return (
+      <Dropdown
+        trigger={["click"]}
+        menu={{
+          items,
+          onClick: ({ key }) => {
+            if (key === "view") {
+              router.push(`/school-admin/students/view/${record._id}`);
+            }
+
+            if (key === "edit") {
+              router.push(`/school-admin/students/edit/${record._id}`);
+            }
+
+            if (key === "delete") {
+              showDeleteConfirm(record);
+            }
+          },
+        }}
+      >
+        <Button type="text" icon={<MoreOutlined />} />
+      </Dropdown>
+    );
+  },
+}
+];
 
   const updateQueryParams = (updates) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -263,8 +274,8 @@ export default function SchoolListPage() {
               allowClear
               value={search}
               onChange={(e) =>
-               setSearch(e.target.value)
-              }
+              { setSearch(e.target.value) ;setDebouncedSearch(e.target.value)
+                            }              }
               className="table-search-inputs"
             />
           </Col>
@@ -335,13 +346,13 @@ export default function SchoolListPage() {
       <div className="bg-white rounded-xl shadow-sm p-4">
         <Table
           columns={columns}
-          dataSource={dataSource}
-          rowKey="key"
+          dataSource={data?.data}
+          rowKey="_id"
           scroll={{x:"max-content"}}
           pagination={{
             current: page,
             pageSize,
-            total: totalCount,
+            total: data?.total,
             showSizeChanger: true,
             showTotal: (total) => `Total ${total} students`,
             onChange: (newPage, newPageSize) => {
