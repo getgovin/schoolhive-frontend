@@ -13,11 +13,48 @@ import {
   Divider,
 } from "antd";
 import {ArrowLeftOutlined} from "@ant-design/icons"
+import { useQuery } from "@tanstack/react-query";
+import { classFilterList } from "../../../../../api/class.api";
+import { sectionFilterList } from "../../../../../api/section.api";
+import { studentFilerList } from "../../../../../api/student.api";
 
 export default function SubmitFeePage() {
   const [selectedStudent, setSelectedStudent] =
     useState(null);
+  const [classId, setClassId] =
+    useState(null);
+  const [sectionId, setSectionId] =
+    useState(null);
+    
+      // Queries
+  const query = useQuery({
+    queryKey: ["classes"],
+    queryFn: classFilterList,
+  });
+  const classOptions = query?.data?.data?.map((value) => ({
+    value: value?._id,
+    label: value?.className,
+  }));
 
+  const { data: sectionData } = useQuery({
+  queryKey: ["sections", classId],
+  queryFn: () => sectionFilterList({ classId }),
+  enabled: !!classId, // Only run when classId exists
+});
+  const SectionOptions = sectionData?.data?.map((value) => ({
+    value: value?._id,
+    label: value?.sectionName,
+  })); 
+
+    const studentQuery= useQuery({
+  queryKey: ["sections", classId , sectionId],
+  queryFn: () => studentFilerList({ classId ,sectionId}),
+  enabled: !!classId && !!sectionId, // Only run when classId exists
+});
+  const studentOption = sectionData?.data?.map((value) => ({
+    value: value?._id,
+    label: value?.studentInfor?.first_name,
+  })); 
   const studentDetails = {
     rollNo: "15",
     name: "Rahul Sharma",

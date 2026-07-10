@@ -10,6 +10,11 @@ export const studentList = async (params) => {
   return response.data;
 };
 
+export const studentFilerList = async (params) => {
+  const response = await axiosInstance.get("/school/student/filter/list", {params});
+  return response.data;
+};
+
 export const studentDelete = async (id) => {
   const response = await axiosInstance.delete(`/school/student/delete/${id}`);
   return response.data;
@@ -24,3 +29,8 @@ export const studentUpdate = async (body , id) => {
   const response = await axiosInstance.put(`/school/student/update/${body?.id}`, body?.data);
   return response.data;
 };
+
+export const studentImport = async (body) => {
+  const response = await axiosInstance.post(`/school/student/import`, body);
+  return response.data;
+}

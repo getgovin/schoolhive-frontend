@@ -9,6 +9,12 @@ export const classList = async (params) => {
   const response = await axiosInstance.get("/school/class/list", {params,});
   return response.data;
 };
+export const classFilterList = async (params) => {
+  const response = await axiosInstance.get("/school/class/filter/list");
+  return response.data;
+};
+
+
 
 export const classDelete = async (id) => {
   const response = await axiosInstance.delete(`/school/class/delete/${id}`);

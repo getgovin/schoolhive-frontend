@@ -28,9 +28,11 @@ import CommonModal from "../../../../components/common/CommonModal";
 import * as XLSX from "xlsx";
 import { saveAs } from "file-saver";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { studentDelete, studentList } from "../../../../api/student.api";
+import { studentDelete, studentImport, studentList } from "../../../../api/student.api";
 import { debounce } from "lodash";
 import { toast } from "react-toastify";
+import { classList } from "../../../../api/class.api";
+import { sectionFilterList } from "../../../../api/section.api";
 
 const { Option } = Select;
 export default function SchoolListPage() {
@@ -41,8 +43,8 @@ export default function SchoolListPage() {
   const [page , setPage] = useState(1)
   const [pageSize , setPageSize] = useState(10)
   const [search , setSearch] = useState("") 
-  const [selectedClass , setSelectedClass ] = useState("") 
-  const [selectedSection , setSelectedSection] = useState("") 
+  const [classId , setclassId ] = useState("") 
+  const [sectonID , setsectonID] = useState("") 
 
 
   const [importModal, setImportModal] = useState(false);
@@ -64,7 +66,6 @@ export default function SchoolListPage() {
     onSuccess: (data) => {
       if (data?.status) {
         toast.success(data?.message);
-        // Refetch the list automatically
         queryClient.invalidateQueries({
           queryKey: ["students"],
         });
@@ -104,22 +105,41 @@ export default function SchoolListPage() {
     });
   };
 
+
+  
+
   const downloadStudentTemplate = () => {
     const data = [
       {
-        "Student Name": "",
-        "Father Name": "",
-        "Mother Name": "",
-        Class: "",
-        Section: "",
-        "Father Mobile Number": "",
-        "Father WhatsApp Number": "",
-        "Mother Mobile Number": "",
-        "Village Name": "",
-        "Tehsil Name": "",
-        "District Name": "",
-        Pincode: "",
-        "State Name": "",
+        "Student First Name": "",
+        "Student Middle Name": "",
+        "Student Last Name": "",
+        "Gender":"",
+        "Date Of Birth":"",
+        "Blood Group" :"",
+        "Admission Number":"",
+        "Roll Number":"",
+        "Date Of Joining":"",
+        "Class":"",
+        "Section":"",
+        "Bus Fee":"",
+        "Old Fee":"",
+        "Father Name":"",
+        "Father Mobile":"",
+        "Father WhatsApp":"",
+        "Mother Name":"",
+        "Mother Mobile":"",
+        "Village":"",
+        "Tehsil":"",
+        "District":"",
+        "State":"",
+        "Pincode":"",
+        "Address":"",
+        "Emergency Contact Person":"",
+        "Emergency Person Relation":"",
+        "Emergency Person Number":"",
+
+       
       },
     ];
 
@@ -142,19 +162,68 @@ export default function SchoolListPage() {
   };
 
 
+const downloadfailedStudentTemplate = (apiData) => {
+  const excelData = apiData.map((item) => ({
+    "Row Not Imported": item.row,
+    "Which field is incorrect" :  item.field ,
+     "Error Why Not Imported": item.message,
+    "Student Name": item.studentName,
+  }));
+
+  const worksheet = XLSX.utils.json_to_sheet(excelData);
+
+  const workbook = XLSX.utils.book_new();
+
+  XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
+
+  const excelBuffer = XLSX.write(workbook, {
+    bookType: "xlsx",
+    type: "array",
+  });
+
+  const file = new Blob([excelBuffer], {
+    type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  });
+
+  saveAs(file, "NotImportedStudents.xlsx");
+};
+
+
   // Queries
   const query = useQuery({
-    queryKey: ["students", page, pageSize, debouncedSearch],
+    queryKey: ["students", page, pageSize, debouncedSearch , classId , sectonID],
     queryFn: () =>
       studentList({
         page,
         pageSize,
         search: debouncedSearch,
+        classId,
+        sectonID
       }),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
   const { data, error, isPending } = query;
+
+
+   const classQuery = useQuery({
+      queryKey: ["classes"],
+      queryFn: classList,
+    });
+    const classOptions = classQuery?.data?.data?.map((value) => ({
+      value: value?._id,
+      label: value?.className,
+    }));
+  
+    const { data: sectionData } = useQuery({
+    queryKey: ["sections", classId],
+    queryFn: () => sectionFilterList({ classId }),
+    enabled: !!classId, // Only run when classId exists
+  });
+    const sectionOptions = sectionData?.data?.map((value) => ({
+      value: value?._id,
+      label: value?.sectionName,
+    })); 
 
 
 const columns = [
@@ -239,19 +308,40 @@ const columns = [
 }
 ];
 
-  const updateQueryParams = (updates) => {
-    const params = new URLSearchParams(searchParams.toString());
-
-    Object.entries(updates).forEach(([key, value]) => {
-      if (value === undefined || value === null || value === "") {
-        params.delete(key);
+ const excelMutation = useMutation({
+    mutationFn: studentImport,
+    onSuccess: (data) => {
+      if (data?.status) {
+        toast.success(data?.message);
+        if(data?.errors.length > 0){
+        downloadfailedStudentTemplate(data?.errors)
+          toast.info("Error data excel download please check and correct this and upload again don't upload all data only incorrect data upload ")
+        }
+        queryClient.invalidateQueries({
+          queryKey: ["students"],
+        });
       } else {
-        params.set(key, value);
+        toast.error(data?.message);
       }
-    });
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message);
+    },
+  });
 
-    router.push(`?${params.toString()}`);
-  };
+  const handleImport = () => {
+  if (!fileList.length) {
+    toast.error("Please select an Excel file");
+    return;
+  }
+
+  const formData = new FormData();
+
+  formData.append("file", fileList[0]);
+
+  excelMutation.mutate(formData);
+};
+
   return (
     <>
           {contextHolder}
@@ -274,7 +364,7 @@ const columns = [
               allowClear
               value={search}
               onChange={(e) =>
-              { setSearch(e.target.value) ;setDebouncedSearch(e.target.value)
+              { setSearch(e.target.value) ;handleSearch(e.target.value)
                             }              }
               className="table-search-inputs"
             />
@@ -285,16 +375,20 @@ const columns = [
               placeholder="Class"
               allowClear
               className="w-full"
-              value={selectedClass}
+              value={classId}
               onChange={(value) =>
-               setSelectedClass(value)
+               setclassId(value)
               }
+              optionRender={classOptions}
             >
-              <Option value="1">Class 1</Option>
-              <Option value="2">Class 2</Option>
-              <Option value="3">Class 3</Option>
-              <Option value="4">Class 4</Option>
-              <Option value="5">Class 5</Option>
+              
+              {
+              classOptions?.map((res,i)=>(
+                 <Option value={res?.value} key={i}>{res?.label}</Option>
+              )) }
+              
+             
+  
             </Select>
           </Col>
 
@@ -303,15 +397,15 @@ const columns = [
               placeholder="Section"
               allowClear
               className="w-full"
-              value={selectedSection}
+              value={sectonID}
               onChange={(value) =>
-               setSelectedSection(value)
+               setsectonID(value)
               }
             >
-              <Option value="A">A</Option>
-              <Option value="B">B</Option>
-              <Option value="C">C</Option>
-              <Option value="D">D</Option>
+                {
+              sectionOptions?.map((res,i)=>(
+                 <Option value={res?.value} key={i}>{res?.label}</Option>
+              )) }
             </Select>
           </Col>
         </Row>
@@ -371,8 +465,8 @@ const columns = [
           setFileList([]);
         }}
         onOk={() => {
-          console.log(fileList);
           setImportModal(false);
+         handleImport()
         }}
       >
         <Upload.Dragger

@@ -35,7 +35,6 @@ export default function AddStudentPage() {
   const queryClient = useQueryClient();
   const [fileList, setFileList] = useState([]);
   const [classId, setClassId] = useState(null);
-  console.log(classId , "classIdclassId")
 
     // Queries
   const query = useQuery({
@@ -63,7 +62,7 @@ export default function AddStudentPage() {
       if (data?.status) {
         toast.success(data?.message);
         queryClient.invalidateQueries({
-          queryKey: ["fees"],
+          queryKey: ["students"],
         });
         router.back();
       } else {
@@ -92,6 +91,8 @@ const handleSubmit = async (values) => {
       classId: values.class,
       sectionId: values.section,
       oldFee: values.oldFee || "0",
+      busFee: values.busFee || "0",
+
     },
 
     parentsDetails: {
@@ -118,7 +119,6 @@ const handleSubmit = async (values) => {
     },
   };
 
-  console.log(payload);
 
   try {
     await mutation.mutateAsync(payload);
@@ -378,7 +378,7 @@ const handleSubmit = async (values) => {
         </Row>
 
         <Row gutter={16}>
-          <Col xs={24} md={8}>
+          <Col xs={24} md={7}>
             <Form.Item
               label="Class"
               name="class"
@@ -392,7 +392,7 @@ const handleSubmit = async (values) => {
             </Form.Item>
           </Col>
 
-          <Col xs={24} md={8}>
+          <Col xs={24} md={7}>
             <Form.Item
               label="Section"
               name="section"
@@ -406,7 +406,15 @@ const handleSubmit = async (values) => {
             </Form.Item>
           </Col>
 
-          <Col xs={24} md={8}>
+          <Col xs={24} md={5}>
+            <Form.Item
+              label="Bus Fee"
+              name="busFee"
+            >
+              <Input placeholder="Enter Bus fee" />
+            </Form.Item>
+          </Col>
+                    <Col xs={24} md={5}>
             <Form.Item
               label="Old Fee"
               name="oldFee"

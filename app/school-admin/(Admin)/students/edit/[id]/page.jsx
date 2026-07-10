@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Form,
   Input,
@@ -19,37 +19,191 @@ import {
   DeleteOutlined
 } from "@ant-design/icons";
 import ImgCrop from "antd-img-crop";
-import { useRouter } from "next/navigation";
+import { useParams, useRouter } from "next/navigation";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+
+import {classList} from "../../../../../../api/class.api"
+import { sectionFilterList } from "../../../../../../api/section.api";
+import { toast } from "react-toastify";
+import { studentUpdate, studentView } from "../../../../../../api/student.api";
+import moment from "moment";
 
 const { Dragger } = Upload;
 const { TextArea } = Input;
 
-export default function EditStudentPage() {
+export default function AddStudentPage() {
   const router = useRouter();
+  const params = useParams();
   const [form] = Form.useForm();
+  const queryClient = useQueryClient();
   const [fileList, setFileList] = useState([]);
+  const [classId, setClassId] = useState(null);
 
-  const onFinish = async (values) => {
-    try {
-      const payload = {
-        ...values,
-        dateOfBirth: values.dateOfBirth?.format("YYYY-MM-DD"),
-        dateOfJoining: values.dateOfJoining?.format("YYYY-MM-DD"),
-        photo: fileList?.[0]?.originFileObj || null,
-      };
+    // Queries
+    const StudentQuery = useQuery({
+      queryKey: ["studentsView", params.id],
+      queryFn: () => studentView(params.id),
+      enabled: !!params.id,
+    });
 
-      console.log("Student Payload", payload);
+    useEffect(() => {
+  if (StudentQuery.data?.data) {
+    const student = StudentQuery.data.data;
 
-      // API CALL HERE
-      // await studentService.createStudent(payload);
+    form.setFieldsValue({
+      // Photo
+      photo: student.photo,
 
-      message.success("Student created successfully");
-      router.push("/super-admin/students");
-    } catch (error) {
-      console.error(error);
-      message.error("Something went wrong");
-    }
+      // Student Info
+      firstName: student.studentInfo?.firstName,
+      middleName: student.studentInfo?.middleName,
+      lastName: student.studentInfo?.lastName,
+      gender: student.studentInfo?.gender,
+
+      dateOfBirth: student.studentInfo?.dob
+        ? moment(student.studentInfo.dob)
+        : null,
+
+      bloodGroup: student.studentInfo?.blood_group,
+      admissionNumber: student.studentInfo?.adminssion_number,
+      rollNumber: student.studentInfo?.roll_number,
+
+      dateOfJoining: student.studentInfo?.joining_date
+        ? moment(student.studentInfo.joining_date)
+        : null,
+
+      class: student.studentInfo?.classId?._id,
+      section: student.studentInfo?.sectionId?._id,
+
+      oldFee: student.studentInfo?.oldFee,
+      busFee: student.studentInfo?.busFee,
+
+      // Parents
+      fatherName: student.parentsDetails?.father_name,
+      fatherMobile: student.parentsDetails?.father_number,
+      fatherWhatsapp: student.parentsDetails?.father_whatsaappNumbr,
+
+      motherName: student.parentsDetails?.mother_name,
+      motherMobile: student.parentsDetails?.mother_number,
+
+      // Address
+      village: student.addressInfo?.village,
+      tehsil: student.addressInfo?.tehssil,
+      district: student.addressInfo?.distric,
+      state: student.addressInfo?.state,
+      pincode: student.addressInfo?.pincode,
+      address: student.addressInfo?.address,
+
+      // Emergency
+      emergencyContactPerson:
+        student.emergency_info?.contact_person,
+
+      relationship:
+        student.emergency_info?.relationshp,
+
+      emergencyMobile:
+        student.emergency_info?.mobile_number,
+    });
+
+    setClassId(student.studentInfo?.classId?._id)
+  }
+}, [StudentQuery.data, form]);
+    // Queries
+  const query = useQuery({
+    queryKey: ["classes"],
+    queryFn: classList,
+  });
+  const classOptions = query?.data?.data?.map((value) => ({
+    value: value?._id,
+    label: value?.className,
+  }));
+
+  const { data: sectionData } = useQuery({
+  queryKey: ["sections", classId],
+  queryFn: () => sectionFilterList({ classId }),
+  enabled: !!classId, // Only run when classId exists
+});
+  const SectionOptions = sectionData?.data?.map((value) => ({
+    value: value?._id,
+    label: value?.sectionName,
+  })); 
+  // Mutations
+  const mutation = useMutation({
+    mutationFn: studentUpdate,
+    onSuccess: (data) => {
+      if (data?.status) {
+        toast.success(data?.message);
+        queryClient.invalidateQueries({
+          queryKey: ["students"],
+        });
+        router.back();
+      } else {
+        toast.error(data?.message);
+      }
+    },
+    onError: (error) => {
+      toast.error(error.response?.data?.message);
+    },
+  });
+
+const handleSubmit = async (values) => {
+  const payload = {
+    photo: values.photo || "",
+
+    studentInfo: {
+      firstName: values.firstName,
+      middleName: values.middleName || "",
+      lastName: values.lastName,
+      gender: values.gender,
+      dob: values.dateOfBirth,
+      blood_group: values.bloodGroup,
+      adminssion_number: values.admissionNumber,
+      roll_number: values.rollNumber,
+      joining_date: values.dateOfJoining,
+      classId: values.class,
+      sectionId: values.section,
+      oldFee: values.oldFee || "0",
+      busFee: values.busFee || "0",
+
+    },
+
+    parentsDetails: {
+      father_name: values.fatherName,
+      father_number: values.fatherMobile,
+      father_whatsaappNumbr: values.fatherWhatsapp,
+      mother_name: values.motherName,
+      mother_number: values.motherMobile,
+    },
+
+    addressInfo: {
+      village: values.village,
+      tehssil: values.tehsil,
+      distric: values.district,
+      state: values.state,
+      pincode: values.pincode,
+      address: values.address || "",
+    },
+
+    emergency_info: {
+      contact_person: values.emergencyContactPerson,
+      relationshp: values.relationship,
+      mobile_number: values.emergencyMobile,
+    },
   };
+
+
+  try {
+    await mutation.mutateAsync({   id: params.id,
+      data: payload,});
+  
+  } catch (error) {
+    console.error(error);
+  }
+};
+
+
+
+
 
   return (
     <Card
@@ -59,7 +213,7 @@ export default function EditStudentPage() {
       <Form
         layout="vertical"
         form={form}
-        onFinish={onFinish}
+        onFinish={handleSubmit}
       >
         {/* PHOTO */}
         <Row gutter={16}>
@@ -278,7 +432,7 @@ export default function EditStudentPage() {
         </Row>
 
         <Row gutter={16}>
-          <Col xs={24} md={6}>
+          <Col xs={24} md={7}>
             <Form.Item
               label="Class"
               name="class"
@@ -288,11 +442,11 @@ export default function EditStudentPage() {
                 },
               ]}
             >
-              <Select placeholder="Select Class" />
+              <Select placeholder="Select Class" options={classOptions} onChange={(e) => setClassId(e)} />
             </Form.Item>
           </Col>
 
-          <Col xs={24} md={6}>
+          <Col xs={24} md={7}>
             <Form.Item
               label="Section"
               name="section"
@@ -302,16 +456,24 @@ export default function EditStudentPage() {
                 },
               ]}
             >
-              <Select placeholder="Select Section" />
+              <Select placeholder="Select Section" options={SectionOptions} />
             </Form.Item>
           </Col>
 
-          <Col xs={24} md={12}>
+          <Col xs={24} md={5}>
             <Form.Item
-              label="Previous School"
-              name="previousSchool"
+              label="Bus Fee"
+              name="busFee"
             >
-              <Input placeholder="Previous School Name" />
+              <Input placeholder="Enter Bus fee" />
+            </Form.Item>
+          </Col>
+                    <Col xs={24} md={5}>
+            <Form.Item
+              label="Old Fee"
+              name="oldFee"
+            >
+              <Input placeholder="Enter old fee" />
             </Form.Item>
           </Col>
         </Row>
@@ -323,7 +485,7 @@ export default function EditStudentPage() {
         </h5>
 
         <Row gutter={16}>
-          <Col xs={24} md={6}>
+          <Col xs={24} md={8}>
             <Form.Item
               label="Father Name"
               name="fatherName"
@@ -337,7 +499,7 @@ export default function EditStudentPage() {
             </Form.Item>
           </Col>
 
-          <Col xs={24} md={6}>
+          <Col xs={24} md={8}>
             <Form.Item
               label="Father Mobile"
               name="fatherMobile"
@@ -354,7 +516,7 @@ export default function EditStudentPage() {
             </Form.Item>
           </Col>
 
-          <Col xs={24} md={6}>
+          <Col xs={24} md={8}>
             <Form.Item
               label="Father WhatsApp"
               name="fatherWhatsapp"
@@ -363,18 +525,11 @@ export default function EditStudentPage() {
             </Form.Item>
           </Col>
 
-          <Col xs={24} md={6}>
-            <Form.Item
-              label="Father Occupation"
-              name="fatherOccupation"
-            >
-              <Input placeholder="Occupation" />
-            </Form.Item>
-          </Col>
+         
         </Row>
 
         <Row gutter={16}>
-          <Col xs={24} md={8}>
+          <Col xs={24} md={12}>
             <Form.Item
               label="Mother Name"
               name="motherName"
@@ -388,7 +543,7 @@ export default function EditStudentPage() {
             </Form.Item>
           </Col>
 
-          <Col xs={24} md={8}>
+          <Col xs={24} md={12}>
             <Form.Item
               label="Mother Mobile"
               name="motherMobile"
@@ -397,14 +552,7 @@ export default function EditStudentPage() {
             </Form.Item>
           </Col>
 
-          <Col xs={24} md={8}>
-            <Form.Item
-              label="Mother Occupation"
-              name="motherOccupation"
-            >
-              <Input placeholder="Occupation" />
-            </Form.Item>
-          </Col>
+        
         </Row>
 
         {/* ADDRESS */}
