@@ -122,7 +122,7 @@ export default function StudentDetailsPage() {
           </Col>
 
           <Col xs={24} md={12}>
-            <label> Total Fee</label>
+            <label> Total Remaing Fee</label>
             <span className="view-value">₹{data?.data?.fee}</span>
           </Col>
 
@@ -138,6 +138,15 @@ export default function StudentDetailsPage() {
               ₹{data?.data?.studentInfo?.busFee}
             </span>
           </Col>
+
+            <Col xs={24} md={12}>
+            <label> Remaining Bus Fee</label>
+            <span className="view-value">
+              ₹{data?.data?.remaingBusFee}
+            </span>
+          </Col>
+
+          
 
           <Col xs={24} md={12}>
             <label> Current Class Fee</label>

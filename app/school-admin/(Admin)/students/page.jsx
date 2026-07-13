@@ -49,7 +49,7 @@ export default function SchoolListPage() {
 
   const [importModal, setImportModal] = useState(false);
   const [fileList, setFileList] = useState([]);
-  const [totalCount, setTotalCount] = useState(100);
+  const [totalCount, setTotalCount] = useState(0);
   const [debouncedSearch, setDebouncedSearch] = useState("");
 
   const handleSearch = useMemo(
