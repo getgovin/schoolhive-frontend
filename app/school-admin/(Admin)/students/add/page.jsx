@@ -396,11 +396,7 @@ const handleSubmit = async (values) => {
             <Form.Item
               label="Section"
               name="section"
-              rules={[
-                {
-                  required: true,
-                },
-              ]}
+             
             >
               <Select placeholder="Select Section" options={SectionOptions} />
             </Form.Item>
@@ -572,6 +568,7 @@ const handleSubmit = async (values) => {
               name="pincode"
               rules={[
                 {
+                  required:true,
                   pattern: /^\d{6}$/,
                   message: "Enter valid pincode",
                 },

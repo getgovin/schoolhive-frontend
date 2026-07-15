@@ -161,7 +161,7 @@ const mutation = useMutation({
       
 
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-4">
         <h1 className="text-2xl font-bold text-slate-900">
           Class List
         </h1>
@@ -171,8 +171,7 @@ const mutation = useMutation({
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
-        <Row gutter={[8, 8]} className="flex-1">
+        <Row gutter={[8, 8]} justify="space-between" className="mb-5">
           <Col xs={24} sm={8} md={8} lg={8}>
             <Input
               placeholder="Search class..."
@@ -184,10 +183,8 @@ const mutation = useMutation({
               className="table-search-inputs"
             />
           </Col>
-        </Row>
-
-        <div className="flex justify-end gap-2">
-          <Button
+                  <Col  xs={24} sm={8} md={8} lg={8} className="flex justify-end">
+               <Button
             type="primary"
             icon={<PlusOutlined />}
             onClick={() =>
@@ -198,8 +195,9 @@ const mutation = useMutation({
           >
             Add Class
           </Button>
-        </div>
-      </div>
+          </Col>
+        </Row>
+
 
       {/* Table */}
       <div className="bg-white rounded-xl shadow-sm p-4">

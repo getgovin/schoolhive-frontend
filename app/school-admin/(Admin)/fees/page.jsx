@@ -158,16 +158,16 @@ export default function FeesListPage() {
       {contextHolder}
 
       {/* Header */}
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold text-slate-900">Fees List</h1>
+      <div className="mb-4">
+        <h1 className="text-2xl font-bold text-slate-900 mb-1">Fee List</h1>
         <p className="text-sm text-slate-500 mt-1">
           Manage class-wise fee structure.
         </p>
       </div>
 
       {/* Search & Add Button */}
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
-        <Row gutter={[8, 8]} className="flex-1">
+ 
+        <Row gutter={[8, 8]}  justify="space-between" className="mb-5">
           <Col xs={24} sm={8} md={8} lg={8}>
             <Input
               placeholder="Search fees..."
@@ -181,17 +181,19 @@ export default function FeesListPage() {
               className="table-search-inputs"
             />
           </Col>
-        </Row>
-        <div className="flex justify-end  ">
-          <Button
+          <Col xs={24} sm={8} md={8} lg={8} className="!flex justify-end">
+           <Button
             type="primary"
             icon={<PlusOutlined />}
             onClick={() => router.push("/school-admin/fees/add")}
           >
             Add Fees
           </Button>
-        </div>
-      </div>
+          </Col>
+        </Row>
+     
+         
+ 
 
       {/* Table */}
       <div className="bg-white rounded-xl shadow-sm p-4">

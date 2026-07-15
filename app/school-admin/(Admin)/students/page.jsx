@@ -31,7 +31,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { studentDelete, studentImport, studentList } from "../../../../api/student.api";
 import { debounce } from "lodash";
 import { toast } from "react-toastify";
-import { classList } from "../../../../api/class.api";
+import { classFilterList } from "../../../../api/class.api";
 import { sectionFilterList } from "../../../../api/section.api";
 
 const { Option } = Select;
@@ -208,7 +208,7 @@ const downloadfailedStudentTemplate = (apiData) => {
 
    const classQuery = useQuery({
       queryKey: ["classes"],
-      queryFn: classList,
+      queryFn: classFilterList,
     });
     const classOptions = classQuery?.data?.data?.map((value) => ({
       value: value?._id,
@@ -347,17 +347,17 @@ const columns = [
           {contextHolder}
 
       {/* Header */}
-      <div className="mb-6">
+      <div className="mb-4">
         <h1 className="text-2xl font-bold text-slate-900">Students List</h1>
         <p className="text-sm text-slate-500 mt-1">
           Manage all registered students.
         </p>
       </div>
 
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
+      <div className="flex flex-col lg:flex-row  justify-between gap-4 mb-3">
         {/* Left Side Filters */}
         <Row gutter={[8, 8]} className="flex-1">
-          <Col xs={24} sm={8} md={8} lg={8}>
+          <Col xs={24} sm={8} md={8} lg={6}>
             <Input
               placeholder="Search Student..."
               prefix={<SearchOutlined />}

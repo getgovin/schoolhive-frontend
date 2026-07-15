@@ -114,12 +114,11 @@ export default function FeesPage() {
   return (
     <div>
       {/* HEADER */}
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-bold">Fees Submission</h2>
+      <div className="mb-4">
+        <h2 className="text-xl font-bold">Fee Submission</h2>
       </div>
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3 mb-5">
-        <Row gutter={[8, 8]}>
-          <Col xs={24} md={12}>
+        <Row gutter={[8, 8]} className="mb-5" justify="space-between">
+          <Col xs={24} sm={8} md={8} lg={8}>
             <Input
               placeholder="Search student name..."
               className="table-search-inputs"
@@ -130,17 +129,17 @@ export default function FeesPage() {
               }}
             />
           </Col>
-        </Row>
-        <div className="flex justify-end  ">
-          <Button
+
+          <Col xs={24} sm={8} md={8} lg={8} className="flex justify-end">
+                    <Button
             type="primary"
             icon={<PlusOutlined />}
             onClick={() => router.push("/school-admin/fee-submission/submit")}
           >
             Submit Fee
           </Button>
-        </div>
-      </div>
+          </Col>
+        </Row>
 
       {/* TABLE */}
       <Card>

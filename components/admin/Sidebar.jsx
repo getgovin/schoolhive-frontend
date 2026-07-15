@@ -62,7 +62,7 @@ const SchoolnavSections = [
         key: '/admin/dashboard',
         icon: <DashboardOutlined />,
         label: 'Dashboard',
-        href: '/admin/dashboard',
+        href: '/school-admin/dashboard',
       },
     ],
   },
@@ -115,6 +115,13 @@ const SchoolnavSections = [
         icon: <CalendarOutlined />,
         label: 'Fees',
         href: '/school-admin/fees',
+      },
+
+          {
+        key: '/school-admin/promote',
+        icon: <SafetyCertificateOutlined />,
+        label: 'Promote Students',
+        href: '/school-admin/promote',
       },
    
       // {
@@ -172,7 +179,7 @@ export default function Sidebar({ setOpensidebar , opensidebar }) {
                   key: route.key,
                   icon: route.icon,
                   label: (
-                    <Link href={route.href} className="text-inherit no-underline">
+                    <Link href={route.href} className="text-inherit no-underline" onClick={()=> setOpensidebar(!opensidebar)}>
                       {route.label}
                     </Link>
                   ),

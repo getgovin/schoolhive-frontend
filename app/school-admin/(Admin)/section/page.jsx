@@ -152,15 +152,14 @@ export default function SectionListPage() {
     <>
       {contextHolder}
 
-      <div className="mb-6">
+      <div className="mb-4">
         <h1 className="text-2xl font-bold text-slate-900">Section List</h1>
         <p className="text-sm text-slate-500 mt-1">
           Manage all class sections.
         </p>
       </div>
 
-      <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-5">
-        <Row gutter={[8, 8]} className="flex-1">
+        <Row gutter={[8, 8]} justify="space-between" className="mb-5">
           <Col xs={24} sm={8} md={8} lg={8}>
             <Input
               placeholder="Search section..."
@@ -174,17 +173,19 @@ export default function SectionListPage() {
               className="table-search-inputs"
             />
           </Col>
-        </Row>
-        <div className="flex justify-end  ">
-          <Button
+
+          <Col xs={24} sm={8} md={8} lg={8} className="flex justify-end">
+             <Button
             type="primary"
             icon={<PlusOutlined />}
             onClick={() => router.push("/school-admin/section/add")}
           >
             Add Section
           </Button>
-        </div>
-      </div>
+          </Col>
+        </Row>
+      
+   
 
       <div className="bg-white rounded-xl shadow-sm p-4">
         <Table
