@@ -389,6 +389,9 @@ label {
 .ant-card-body {
   padding: 40px !important; /* px-10 py-10 */
 }
+.internal-card .ant-card-body {
+  padding: 20px !important; /* px-10 py-10 */
+}
 
 /* Optional: Card Header */
 .ant-card-head {

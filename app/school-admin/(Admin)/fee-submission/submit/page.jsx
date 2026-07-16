@@ -64,7 +64,7 @@ export default function SubmitFeePage() {
   const studentQuery = useQuery({
     queryKey: ["sections", classId, sectionId],
     queryFn: () => studentFilerList({ classId, sectionId }),
-    enabled: !!classId && !!sectionId, // Only run when classId exists
+    enabled: !!classId , // Only run when classId exists
   });
   const studentOption = studentQuery?.data?.data?.map((value) => ({
     value: value?._id,
@@ -83,9 +83,9 @@ export default function SubmitFeePage() {
     onSuccess: (data) => {
       if (data?.status) {
         toast.success(data?.message);
-        window.open(data?.downloadUrl, "_blank");
+        // window.open(data?.downloadUrl, "_blank");
         queryClient.invalidateQueries({
-          queryKey: ["studentDetailsQuery"],
+          queryKey: ["feeHistory"],
         });
       } else {
         toast.error(data?.message);

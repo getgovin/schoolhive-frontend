@@ -34,3 +34,7 @@ export const studentImport = async (body) => {
   const response = await axiosInstance.post(`/school/student/import`, body);
   return response.data;
 }
+export const studentPromote = async (body) => {
+  const response = await axiosInstance.post(`/school/student/promote`, body);
+  return response.data;
+}

@@ -130,7 +130,7 @@ export default function FeesPage() {
             />
           </Col>
 
-          <Col xs={24} sm={8} md={8} lg={8} className="flex justify-end">
+          <Col xs={24} sm={8} md={8} lg={8} className="!flex justify-end">
                     <Button
             type="primary"
             icon={<PlusOutlined />}

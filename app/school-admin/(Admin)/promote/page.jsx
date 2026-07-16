@@ -1,6 +1,5 @@
 "use client";
-
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import {
   Table,
   Input,
@@ -10,69 +9,42 @@ import {
   Select,
   Row,
   Col,
-  Upload,
-  message,
   Card,
 } from "antd";
-import {
-  PlusOutlined,
-  SearchOutlined,
-  MoreOutlined,
-  EyeOutlined,
-  EditOutlined,
-  DeleteOutlined,
-  ExclamationCircleFilled,
-  UploadOutlined,
-} from "@ant-design/icons";
 import { useRouter } from "next/navigation";
-import CommonModal from "../../../../components/common/CommonModal";
-import * as XLSX from "xlsx";
-import { saveAs } from "file-saver";
+
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
-  studentDelete,
   studentFilerList,
-  studentImport,
-  studentList,
+  studentPromote,
 } from "../../../../api/student.api";
-import { debounce } from "lodash";
 import { toast } from "react-toastify";
-import { classFilterList, classList } from "../../../../api/class.api";
+import { classFilterList } from "../../../../api/class.api";
 import { sectionFilterList } from "../../../../api/section.api";
+import { GiJumpAcross } from "react-icons/gi";
+
 
 const { Option } = Select;
-export default function SchoolListPage() {
+export default function PromoteList() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [modal, contextHolder] = Modal.useModal();
 
-  const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(10);
-  const [search, setSearch] = useState("");
   const [classId, setclassId] = useState("");
-  const [sectonID, setsectonID] = useState("");
+  const [sectionId, setsectionId] = useState("");
+  const [newClassId, setNewClassId] = useState("");
+  const [newSectonID, setNewSectonID] = useState("");
+const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
-  const [importModal, setImportModal] = useState(false);
-  const [fileList, setFileList] = useState([]);
-  const [totalCount, setTotalCount] = useState(0);
-  const [debouncedSearch, setDebouncedSearch] = useState("");
-
-  const handleSearch = useMemo(
-    () =>
-      debounce((value) => {
-        setDebouncedSearch(value);
-      }, 500),
-    [],
-  );
 
   const mutation = useMutation({
-    mutationFn: studentDelete,
+    mutationFn: studentPromote,
     onSuccess: (data) => {
       if (data?.status) {
         toast.success(data?.message);
-        queryClient.invalidateQueries({
-          queryKey: ["students"],
-        });
+        // queryClient.invalidateQueries({
+        //   queryKey: ["students"],
+        // });
       } else {
         toast.error(data?.message);
       }
@@ -82,117 +54,30 @@ export default function SchoolListPage() {
     },
   });
 
-  const showDeleteConfirm = (record) => {
+  const showconfirmpopup = () => {
     modal.confirm({
-      title: "Delete Student",
-      icon: <ExclamationCircleFilled />,
-      content: `Are you sure you want to delete ${record.studentInfo?.firstName || ""} ${record.studentInfo?.lastName || ""}?`,
-      okText: "Delete",
-      okType: "danger",
+      title: "Promote Student to next Class and section",
+      content:
+        "Are you sure you want to promote selected students for next Class and section?",
+      okText: "Promote",
       cancelText: "Cancel",
-      onOk() {
-        mutation.mutateAsync(record?._id);
-      },
+     onOk: () => {
+      mutation.mutateAsync({
+        studentIds: selectedRowKeys,
+        classId: newClassId,
+        sectionId: newSectonID,
+      });
+    },
     });
-  };
-
-  const showTemplateDownloadConfirm = () => {
-    modal.confirm({
-      title: "Download Student Template",
-      content: "Are you sure you want to download the student Excel template?",
-      okText: "Download",
-      cancelText: "Cancel",
-      onOk: () => {
-        downloadStudentTemplate();
-      },
-    });
-  };
-
-  const downloadStudentTemplate = () => {
-    const data = [
-      {
-        "Student First Name": "",
-        "Student Middle Name": "",
-        "Student Last Name": "",
-        Gender: "",
-        "Date Of Birth": "",
-        "Blood Group": "",
-        "Admission Number": "",
-        "Roll Number": "",
-        "Date Of Joining": "",
-        Class: "",
-        Section: "",
-        "Bus Fee": "",
-        "Old Fee": "",
-        "Father Name": "",
-        "Father Mobile": "",
-        "Father WhatsApp": "",
-        "Mother Name": "",
-        "Mother Mobile": "",
-        Village: "",
-        Tehsil: "",
-        District: "",
-        State: "",
-        Pincode: "",
-        Address: "",
-        "Emergency Contact Person": "",
-        "Emergency Person Relation": "",
-        "Emergency Person Number": "",
-      },
-    ];
-
-    const worksheet = XLSX.utils.json_to_sheet(data);
-
-    const workbook = XLSX.utils.book_new();
-
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
-
-    const excelBuffer = XLSX.write(workbook, {
-      bookType: "xlsx",
-      type: "array",
-    });
-
-    const file = new Blob([excelBuffer], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
-
-    saveAs(file, "Student_Template.xlsx");
-  };
-
-  const downloadfailedStudentTemplate = (apiData) => {
-    const excelData = apiData.map((item) => ({
-      "Row Not Imported": item.row,
-      "Which field is incorrect": item.field,
-      "Error Why Not Imported": item.message,
-      "Student Name": item.studentName,
-    }));
-
-    const worksheet = XLSX.utils.json_to_sheet(excelData);
-
-    const workbook = XLSX.utils.book_new();
-
-    XLSX.utils.book_append_sheet(workbook, worksheet, "Students");
-
-    const excelBuffer = XLSX.write(workbook, {
-      bookType: "xlsx",
-      type: "array",
-    });
-
-    const file = new Blob([excelBuffer], {
-      type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    });
-
-    saveAs(file, "NotImportedStudents.xlsx");
   };
 
   // Queries
   const query = useQuery({
-    queryKey: ["students",  debouncedSearch, classId, sectonID],
+    queryKey: ["studentFilter", classId, sectionId],
     queryFn: () =>
       studentFilerList({
-        search: debouncedSearch,
         classId,
-        sectonID,
+        sectionId,
       }),
     staleTime: 1000 * 60 * 5, // 5 minutes
   });
@@ -200,7 +85,7 @@ export default function SchoolListPage() {
   const { data, error, isPending } = query;
 
   const classQuery = useQuery({
-    queryKey: ["classes"],
+    queryKey: ["classesFilter"],
     queryFn: classFilterList,
   });
   const classOptions = classQuery?.data?.data?.map((value) => ({
@@ -209,7 +94,7 @@ export default function SchoolListPage() {
   }));
 
   const { data: sectionData } = useQuery({
-    queryKey: ["sections", classId],
+    queryKey: ["sectionsFilter", classId],
     queryFn: () => sectionFilterList({ classId }),
     enabled: !!classId, // Only run when classId exists
   });
@@ -251,96 +136,24 @@ export default function SchoolListPage() {
       key: "section",
       render: (_, record) => record.studentInfo?.sectionId?.sectionName,
     },
-    {
-      title: "Action",
-      key: "action",
-      width: 80,
-      render: (_, record) => {
-        const items = [
-          {
-            key: "view",
-            icon: <EyeOutlined />,
-            label: "View",
-          },
-          {
-            key: "edit",
-            icon: <EditOutlined />,
-            label: "Edit",
-          },
-          {
-            key: "delete",
-            icon: <DeleteOutlined />,
-            label: "Delete",
-            danger: true,
-          },
-        ];
-
-        return (
-          <Dropdown
-            trigger={["click"]}
-            menu={{
-              items,
-              onClick: ({ key }) => {
-                if (key === "view") {
-                  router.push(`/school-admin/students/view/${record._id}`);
-                }
-
-                if (key === "edit") {
-                  router.push(`/school-admin/students/edit/${record._id}`);
-                }
-
-                if (key === "delete") {
-                  showDeleteConfirm(record);
-                }
-              },
-            }}
-          >
-            <Button type="text" icon={<MoreOutlined />} />
-          </Dropdown>
-        );
-      },
-    },
   ];
-
-  const excelMutation = useMutation({
-    mutationFn: studentImport,
-    onSuccess: (data) => {
-      if (data?.status) {
-        toast.success(data?.message);
-        if (data?.errors.length > 0) {
-          downloadfailedStudentTemplate(data?.errors);
-          toast.info(
-            "Error data excel download please check and correct this and upload again don't upload all data only incorrect data upload ",
-          );
-        }
-        queryClient.invalidateQueries({
-          queryKey: ["students"],
-        });
-      } else {
-        toast.error(data?.message);
-      }
-    },
-    onError: (error) => {
-      toast.error(error.response?.data?.message);
-    },
-  });
-
-  const handleImport = () => {
-    if (!fileList.length) {
-      toast.error("Please select an Excel file");
-      return;
-    }
-
-    const formData = new FormData();
-
-    formData.append("file", fileList[0]);
-
-    excelMutation.mutate(formData);
-  };
+useEffect(() => {
+  if (data?.data?.length) {
+    setSelectedRowKeys(data.data.map((student) => student._id));
+  } else {
+    setSelectedRowKeys([]);
+  }
+}, [data]);
+  const rowSelection = {
+  selectedRowKeys,
+  onChange: (newSelectedRowKeys) => {
+    setSelectedRowKeys(newSelectedRowKeys);
+  }, 
+}
 
   return (
     <>
-      {contextHolder}
+              {contextHolder}
 
       {/* Header */}
       <div className="mb-4">
@@ -353,101 +166,104 @@ export default function SchoolListPage() {
       </div>
 
       <Row gutter={[16, 16]} className=" mb-3" justify="space-between">
-
         <Col xs={24} sm={24} md={24} lg={10} xl={10}>
-        <Card title="TO">
+          <Card
+            title="From: Current Class & Section "
+            className="internal-card"
+          >
+            <Row gutter={[8, 8]}>
+              <Col span={24}>
+                <Select
+                  placeholder="Class"
+                  allowClear
+                  className="w-full"
+                  value={classId}
+                  onChange={(value) => setclassId(value)}
+                  optionRender={classOptions}
+                >
+                  {classOptions?.map((res, i) => (
+                    <Option value={res?.value} key={i}>
+                      {res?.label}
+                    </Option>
+                  ))}
+                </Select>
+              </Col>
 
-              <Row gutter={[8, 8]}>
-            <Col span={24}>
-              <Select
-                placeholder="Class"
-                allowClear
-                className="w-full"
-                value={classId}
-                onChange={(value) => setclassId(value)}
-                optionRender={classOptions}
-              >
-                {classOptions?.map((res, i) => (
-                  <Option value={res?.value} key={i}>
-                    {res?.label}
-                  </Option>
-                ))}
-              </Select>
-            </Col>
-
-            <Col span={24}>
-              <Select
-                placeholder="Section"
-                allowClear
-                className="w-full"
-                value={sectonID}
-                onChange={(value) => setsectonID(value)}
-              >
-                {sectionOptions?.map((res, i) => (
-                  <Option value={res?.value} key={i}>
-                    {res?.label}
-                  </Option>
-                ))}
-              </Select>
-            </Col>
-          </Row>
-        </Card>
-
-        
+              <Col span={24}>
+                <Select
+                  placeholder="Section"
+                  allowClear
+                  className="w-full"
+                  value={sectionId}
+                  onChange={(value) => setsectionId(value)}
+                >
+                  {sectionOptions?.map((res, i) => (
+                    <Option value={res?.value} key={i}>
+                      {res?.label}
+                    </Option>
+                  ))}
+                </Select>
+              </Col>
+            </Row>
+          </Card>
         </Col>
 
         <Col xs={24} sm={24} md={24} lg={10} xl={10}>
-        <Card title="From">
+          <Card
+            title="To: Promoted Class & Section"
+            className="internal-card"
+          >
+            <Row gutter={[8, 8]}>
+              <Col span={24}>
+                <Select
+                  placeholder="Class"
+                  allowClear
+                  className="w-full"
+                  value={newClassId}
+                  onChange={(value) => setNewClassId(value)}
+                  optionRender={classOptions}
+                >
+                  {classOptions?.map((res, i) => (
+                    <Option value={res?.value} key={i}>
+                      {res?.label}
+                    </Option>
+                  ))}
+                </Select>
+              </Col>
 
-             <Row gutter={[8, 8]}>
-            <Col span={24}>
-              <Select
-                placeholder="Class"
-                allowClear
-                className="w-full"
-                value={classId}
-                onChange={(value) => setclassId(value)}
-                optionRender={classOptions}
-              >
-                {classOptions?.map((res, i) => (
-                  <Option value={res?.value} key={i}>
-                    {res?.label}
-                  </Option>
-                ))}
-              </Select>
-            </Col>
-
-            <Col span={24}>
-              <Select
-                placeholder="Section"
-                allowClear
-                className="w-full"
-                value={sectonID}
-                onChange={(value) => setsectonID(value)}
-              >
-                {sectionOptions?.map((res, i) => (
-                  <Option value={res?.value} key={i}>
-                    {res?.label}
-                  </Option>
-                ))}
-              </Select>
-            </Col>
-          </Row>{" "}
-        </Card>
-
-         
+              <Col span={24}>
+                <Select
+                  placeholder="Section"
+                  allowClear
+                  className="w-full"
+                  value={newSectonID}
+                  onChange={(value) => setNewSectonID(value)}
+                >
+                  {sectionOptions?.map((res, i) => (
+                    <Option value={res?.value} key={i}>
+                      {res?.label}
+                    </Option>
+                  ))}
+                </Select>
+              </Col>
+            </Row>{" "}
+          </Card>
         </Col>
       </Row>
 
       {/* Table */}
       <div className="bg-white rounded-xl shadow-sm p-4">
-        <Table
-          columns={columns}
-          dataSource={data?.data}
-          rowKey="_id"
-          scroll={{ x: "max-content" }}
-          pagination={false}
-        />
+        <Button icon={<GiJumpAcross className="text-[22px]" />} className="!mb-3" onClick={showconfirmpopup}>
+          Promote
+        </Button>
+<Table
+  rowSelection={rowSelection}
+  columns={columns}
+  dataSource={data?.data}
+  rowKey="_id"
+  scroll={{ x: "max-content" }}
+  pagination={false}
+/>
       </div>
     </>
   );

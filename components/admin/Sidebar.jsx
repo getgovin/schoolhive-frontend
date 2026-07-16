@@ -6,16 +6,22 @@ import { Menu } from 'antd';
 import {
   DashboardOutlined,
   BankOutlined,
-  UserOutlined,
   TeamOutlined,
-  CalendarOutlined,
-  FileTextOutlined,
   BarChartOutlined,
   SettingOutlined,
   SafetyCertificateOutlined,
   EllipsisOutlined,
   CloseOutlined
 } from '@ant-design/icons';
+import { MdDashboard } from "react-icons/md";
+import { AiOutlineApartment } from "react-icons/ai";
+import { SiGoogleclassroom } from "react-icons/si";
+import { PiStudentFill } from "react-icons/pi";
+import { TbCoinRupeeFilled } from "react-icons/tb";
+import { GiJumpAcross } from "react-icons/gi";
+import { GiReceiveMoney } from "react-icons/gi";
+
+
 
 const navSections = [
   {
@@ -60,7 +66,7 @@ const SchoolnavSections = [
     routes: [
       {
         key: '/admin/dashboard',
-        icon: <DashboardOutlined />,
+        icon: <MdDashboard />,
         label: 'Dashboard',
         href: '/school-admin/dashboard',
       },
@@ -71,7 +77,7 @@ const SchoolnavSections = [
     routes: [
       {
         key: '/school-admin/students',
-        icon: <BankOutlined />,
+        icon: <PiStudentFill />,
         label: 'Students',
         href: '/school-admin/students',
       },
@@ -89,7 +95,7 @@ const SchoolnavSections = [
       // },
             {
         key: '/school-admin/fee-submission',
-        icon: <SafetyCertificateOutlined />,
+        icon: <GiReceiveMoney />,
         label: 'Fee Submission',
         href: '/school-admin/fee-submission',
       },
@@ -100,26 +106,26 @@ const SchoolnavSections = [
     routes: [
        {
         key: '/school-admin/class',
-        icon: <CalendarOutlined />,
+        icon: <SiGoogleclassroom />,
         label: 'Class',
         href: '/school-admin/class',
       },
        {
         key: '/school-admin/section',
-        icon: <CalendarOutlined />,
+        icon: <AiOutlineApartment />,
         label: 'Section',
         href: '/school-admin/section',
       },
       {
         key: '/school-admin/fees',
-        icon: <CalendarOutlined />,
+        icon: <TbCoinRupeeFilled />,
         label: 'Fees',
         href: '/school-admin/fees',
       },
 
           {
         key: '/school-admin/promote',
-        icon: <SafetyCertificateOutlined />,
+        icon: <GiJumpAcross />,
         label: 'Promote Students',
         href: '/school-admin/promote',
       },
