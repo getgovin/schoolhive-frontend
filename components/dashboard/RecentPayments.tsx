@@ -59,15 +59,13 @@ export default function RecentPayments() {
   return (
     <Card
       variant="borderless"
-      className="rounded-2xl shadow-sm h-full"
+      className="rounded-2xl shadow-sm h-full internal-card"
       title={
         <div className="flex justify-between items-center">
           <span className="">Recent Fee Collections</span>
 
-          <Tag color="green">{payments.length} Payments</Tag>
         </div>
       }
-       styles={{ body: { padding: "0px !important" } }}
 
     >
       <div className="space-y-4 max-h-[500px] overflow-y-auto pr-2">

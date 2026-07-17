@@ -8,7 +8,7 @@ import { toast } from "react-toastify";
 import { LoadingOutlined } from "@ant-design/icons";
 
 const classOptions = [
-  { label: "Pre-Nursery", value: "PRE_NURSERY" },
+  { label: "Pre-Nursery", value: "PRE NURSERY" },
   { label: "Nursery", value: "NURSERY" },
   { label: "LKG", value: "LKG" },
   { label: "UKG", value: "UKG" },

@@ -43,8 +43,8 @@ export default function SchoolListPage() {
   const [page , setPage] = useState(1)
   const [pageSize , setPageSize] = useState(10)
   const [search , setSearch] = useState("") 
-  const [classId , setclassId ] = useState("") 
-  const [sectonID , setsectonID] = useState("") 
+  const [classId , setclassId ] = useState(null) 
+  const [sectonID , setsectonID] = useState(null) 
 
 
   const [importModal, setImportModal] = useState(false);
@@ -372,7 +372,7 @@ const columns = [
 
           <Col xs={12} sm={8} md={8} lg={6}>
             <Select
-              placeholder="Class"
+              placeholder="Select Class"
               allowClear
               className="w-full"
               value={classId}
@@ -394,7 +394,7 @@ const columns = [
 
           <Col xs={12} sm={8} md={8} lg={6}>
             <Select
-              placeholder="Section"
+              placeholder="Select Section"
               allowClear
               className="w-full"
               value={sectonID}

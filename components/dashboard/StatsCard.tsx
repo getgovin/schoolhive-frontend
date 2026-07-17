@@ -20,8 +20,8 @@ export default function StatsCard({
   return (
     <Card
       variant="borderless"
-      className="group overflow-hidden rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
-  styles={{ body: { padding: "0px !important" } }}
+      className=" small-card group overflow-hidden rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 hover:-translate-y-1"
+      
     >
       <div className="relative flex items-center justify-between p-6">
         {/* Left Content */}

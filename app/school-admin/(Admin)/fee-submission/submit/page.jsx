@@ -17,22 +17,25 @@ import {
 } from "antd";
 import dayjs from "dayjs";
 import { ArrowLeftOutlined } from "@ant-design/icons";
-import { useMutation, useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { classFilterList } from "../../../../../api/class.api";
 import { sectionFilterList } from "../../../../../api/section.api";
 import { studentFilerList, studentView } from "../../../../../api/student.api";
 import {
+  feepdfDownload,
   feeSubmission,
   studentHistoryView,
 } from "../../../../../api/feesubmisssion.api";
 import { toast } from "react-toastify";
 import moment from "moment";
+import { useRouter } from "next/navigation";
 const { TextArea } = Input;
 const { Text } = Typography;
 
 export default function SubmitFeePage() {
   const [form] = Form.useForm();
-
+  const router = useRouter();
+  const queryClient = useQueryClient();
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [classId, setClassId] = useState(null);
   const [sectionId, setSectionId] = useState(null);
@@ -62,7 +65,7 @@ export default function SubmitFeePage() {
   }));
 
   const studentQuery = useQuery({
-    queryKey: ["sections", classId, sectionId],
+    queryKey: ["studentFilter", classId, sectionId],
     queryFn: () => studentFilerList({ classId, sectionId }),
     enabled: !!classId , // Only run when classId exists
   });
@@ -83,10 +86,19 @@ export default function SubmitFeePage() {
     onSuccess: (data) => {
       if (data?.status) {
         toast.success(data?.message);
-        // window.open(data?.downloadUrl, "_blank");
-        queryClient.invalidateQueries({
-          queryKey: ["feeHistory"],
-        });
+           // Reset the form
+      form.resetFields();
+        window.open(data?.downloadUrl, "_blank");
+           queryClient.invalidateQueries({
+      queryKey: ["feeHistory", studentId],
+    });
+
+     queryClient.invalidateQueries({
+      queryKey: ["studentsView", studentId],
+    });
+
+
+   
       } else {
         toast.error(data?.message);
       }
@@ -102,6 +114,27 @@ export default function SubmitFeePage() {
     enabled: !!studentId,
   });
 
+
+const downloadMutation = useMutation({
+  mutationFn: feepdfDownload,
+  onSuccess: ({ blob, fileName }) => {
+    const url = window.URL.createObjectURL(blob);
+
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = fileName; // Download starts automatically
+    document.body.appendChild(a);
+    a.click();
+
+    a.remove();
+    window.URL.revokeObjectURL(url);
+
+    toast.success("Receipt downloaded successfully.");
+  },
+  onError: (error) => {
+    toast.error(error?.response?.data?.message || "Download failed");
+  },
+});
   const columns = [
     {
       title: "Date",
@@ -160,7 +193,8 @@ export default function SubmitFeePage() {
     },
     {
       title: "Action",
-      render: (_, record) => <Button size="small">PDF</Button>,
+      render: (_, record) => <Button size="small"  onClick={() => downloadMutation.mutate(record?._id)}
+  loading={downloadMutation.isPending}>PDF</Button>,
     },
   ];
 
@@ -185,7 +219,6 @@ export default function SubmitFeePage() {
       remarks: values?.remark,
     };
     try {
-      console.log(payload);
       await mutation.mutateAsync(payload);
     } catch (error) {
       console.error(error);

@@ -30,10 +30,10 @@ export default function PromoteList() {
   const queryClient = useQueryClient();
   const [modal, contextHolder] = Modal.useModal();
 
-  const [classId, setclassId] = useState("");
-  const [sectionId, setsectionId] = useState("");
-  const [newClassId, setNewClassId] = useState("");
-  const [newSectonID, setNewSectonID] = useState("");
+  const [classId, setclassId] = useState(null);
+  const [sectionId, setsectionId] = useState(null);
+  const [newClassId, setNewClassId] = useState(null);
+  const [newSectonID, setNewSectonID] = useState(null);
 const [selectedRowKeys, setSelectedRowKeys] = useState([]);
 
 
@@ -42,9 +42,9 @@ const [selectedRowKeys, setSelectedRowKeys] = useState([]);
     onSuccess: (data) => {
       if (data?.status) {
         toast.success(data?.message);
-        // queryClient.invalidateQueries({
-        //   queryKey: ["students"],
-        // });
+        queryClient.invalidateQueries({
+          queryKey: ["studentFilter"],
+        });
       } else {
         toast.error(data?.message);
       }
@@ -174,7 +174,7 @@ useEffect(() => {
             <Row gutter={[8, 8]}>
               <Col span={24}>
                 <Select
-                  placeholder="Class"
+                  placeholder="Select Class"
                   allowClear
                   className="w-full"
                   value={classId}
@@ -191,7 +191,7 @@ useEffect(() => {
 
               <Col span={24}>
                 <Select
-                  placeholder="Section"
+                  placeholder="Select Section"
                   allowClear
                   className="w-full"
                   value={sectionId}
@@ -216,7 +216,7 @@ useEffect(() => {
             <Row gutter={[8, 8]}>
               <Col span={24}>
                 <Select
-                  placeholder="Class"
+                  placeholder="Select Class"
                   allowClear
                   className="w-full"
                   value={newClassId}
@@ -233,7 +233,7 @@ useEffect(() => {
 
               <Col span={24}>
                 <Select
-                  placeholder="Section"
+                  placeholder="Select Section"
                   allowClear
                   className="w-full"
                   value={newSectonID}
@@ -253,7 +253,7 @@ useEffect(() => {
 
       {/* Table */}
       <div className="bg-white rounded-xl shadow-sm p-4">
-        <Button icon={<GiJumpAcross className="text-[22px]" />} className="!mb-3" onClick={showconfirmpopup}>
+        <Button disabled={!newClassId || !selectedRowKeys.length} icon={<GiJumpAcross className="text-[22px]" />} className="!mb-3" onClick={showconfirmpopup}>
           Promote
         </Button>
 <Table

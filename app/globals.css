@@ -45,12 +45,12 @@ h6 {
 
 /* Only font size changes */
 h1 {
-  font-size: 40px;
+  font-size: 35px;
   margin-bottom: 0px !important;
 }
 
 h2 {
-  font-size: 32px;
+  font-size: 30px;
 }
 
 h3 {
@@ -392,6 +392,9 @@ label {
 .internal-card .ant-card-body {
   padding: 20px !important; /* px-10 py-10 */
 }
+.small-card .ant-card-body {
+  padding: 0px !important; /* px-10 py-10 */
+}
 
 /* Optional: Card Header */
 .ant-card-head {
@@ -451,5 +454,4 @@ label {
   padding: 20px !important; /* px-10 py-10 */
 }
 }
-
 
